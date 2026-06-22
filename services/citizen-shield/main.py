@@ -95,8 +95,12 @@ def assess_incident(payload: AssessScamRequest):
         
     text_lower = payload.message_text.lower()
     
-    # Simple trigger keywords density check for risk scoring
-    scam_keywords = ["cbi", "arrest", "narcotics", "customs", "police", "money laundering", "court", "parcel", "jail"]
+    # Simple trigger keywords density check for risk scoring (including common transliterated/local language synonyms)
+    scam_keywords = [
+        "cbi", "arrest", "narcotics", "customs", "police", "money laundering", "court", "parcel", "jail",
+        "सीबीआई", "अरेस्ट", "पुलिस", "जेल", "पार्सल", "कस्टम", "कोर्ट", "गिरफ्तार", "पैसे",
+        "સીબીઆઈ", "અરેસ્ટ", "પોલીસ", "જેલ", "પાર્સલ"
+    ]
     hits = sum(1 for kw in scam_keywords if kw in text_lower)
     
     risk_score = min(hits / 3.0, 1.0)
@@ -108,7 +112,7 @@ def assess_incident(payload: AssessScamRequest):
         steps = knowledge["steps"]
     else:
         guidance = knowledge["SCAM_NOT_FOUND"]
-        steps = [steps[2]] if len(knowledge["steps"]) > 2 else []
+        steps = [knowledge["steps"][2]] if len(knowledge["steps"]) > 2 else []
         
     return AssessScamResponse(
         scam_risk=risk_level,

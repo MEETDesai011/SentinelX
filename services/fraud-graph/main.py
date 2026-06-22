@@ -155,12 +155,13 @@ def get_network(node_id: str):
                 for n in record["nodes"]:
                     labels = list(n.labels)
                     label = labels[0] if labels else "Unknown"
-                    resp_nodes.append(HopNode(id=n["id"], label=label, properties=dict(n)))
+                    node_key = n.get("id") or n.get("number") or n.get("imei") or (n.element_id if hasattr(n, 'element_id') else str(n.id))
+                    resp_nodes.append(HopNode(id=node_key, label=label, properties=dict(n)))
                     
                 resp_rels = []
                 for r in record["relationships"]:
-                    source_id = r.start_node["id"]
-                    target_id = r.end_node["id"]
+                    source_id = r.start_node.get("id") or r.start_node.get("number") or r.start_node.get("imei") or (r.start_node.element_id if hasattr(r.start_node, 'element_id') else str(r.start_node.id))
+                    target_id = r.end_node.get("id") or r.end_node.get("number") or r.end_node.get("imei") or (r.end_node.element_id if hasattr(r.end_node, 'element_id') else str(r.end_node.id))
                     resp_rels.append(HopRelationship(source=source_id, target=target_id, type=r.type, properties=dict(r)))
                     
                 return NetworkResponse(nodes=resp_nodes, relationships=resp_rels)

@@ -30,7 +30,7 @@ def test_analyse_session_scam():
 
 def test_classify_transcript():
     payload = {
-        "text": "This is Customs cleared package. You must pay 20000 rupees immediately to clear."
+        "text": "This is customs clearance of a fedex parcel. You must pay 20000 rupees immediately to clear."
     }
     response = client.post("/transcripts/classify", json=payload)
     assert response.status_code == 200

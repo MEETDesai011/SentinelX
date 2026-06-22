@@ -25,7 +25,7 @@ services:
     container_name: sentinelx-neo4j
     environment:
       NEO4J_AUTH: neo4j/password123
-      NEO4J_PLUGINS: '["apoc", "gds"]'
+      NEO4J_PLUGINS: '["apoc", "graph-data-science"]'
     ports:
       - "7474:7474"
       - "7687:7687"

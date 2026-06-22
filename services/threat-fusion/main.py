@@ -130,7 +130,7 @@ def evaluate_threat(payload: ThreatEvaluateRequest):
         system_directives=directives
     )
 
-@post_db = get_db_connection()
+
 
 @app.post("/geo/events", response_model=GeoEventResponse)
 def create_geo_event(payload: GeoEventRequest):

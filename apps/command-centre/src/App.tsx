@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Shield, AlertTriangle, Users, MapPin, Search, Activity, FileText, 
-  Map, DollarSign, Upload, Bell, CheckCircle2, ChevronRight, Play, Cpu, 
-  TrendingUp, RefreshCw, XCircle, FileSpreadsheet
+  Map, DollarSign, Upload, Bell, ChevronRight, Cpu, RefreshCw
 } from 'lucide-react';
 
 // --- MOCK DATA FOR MVP VIEWS ---
@@ -53,7 +52,6 @@ export default function App() {
   const [currencyFile, setCurrencyFile] = useState<string | null>(null);
   const [currencyResult, setCurrencyResult] = useState<any | null>(null);
   const [scanning, setScanning] = useState(false);
-  const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
   
   // Real-time call transcript stream simulation
   useEffect(() => {
@@ -249,7 +247,6 @@ export default function App() {
                   <div className="h-96 w-full rounded-lg border border-slate-700 bg-slate-950 relative overflow-hidden flex items-center justify-center">
                     <svg className="absolute w-full h-full text-slate-800" viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="0.5">
                       <path d="M50 5 L70 30 L80 60 L60 90 L40 90 L20 70 L15 50 L30 20 Z" fill="#1e293b" fillOpacity="0.3" stroke="#334155" strokeWidth="1" />
-                      <grid />
                     </svg>
                     
                     {/* Render active pins */}
@@ -261,7 +258,6 @@ export default function App() {
                       const y = (1 - (pin.lat - 8) / 29) * 80 + 10;
                       
                       const isHigh = pin.score > 0.90;
-                      const color = isHigh ? "fill-red-500 stroke-red-400" : "fill-amber-500 stroke-amber-400";
                       
                       return (
                         <div 
