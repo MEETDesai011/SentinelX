@@ -1,0 +1,213 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum UserRole {
+  CITIZEN
+  OFFICER
+  ANALYST
+  ADMIN
+}
+
+enum CaseStatus {
+  OPEN
+  UNDER_INVESTIGATION
+  RESOLVED
+  CLOSED
+}
+
+enum AlertSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum AlertStatus {
+  ACTIVE
+  DISMISSED
+  ESCALATED
+}
+
+enum Denomination {
+  INR_10
+  INR_20
+  INR_50
+  INR_100
+  INR_200
+  INR_500
+}
+
+model User {
+  id        String    @id @default(uuid()) @db.Uuid
+  email     String    @unique
+  password  String
+  name      String
+  role      UserRole  @default(CITIZEN)
+  phone     String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  cases           Case[]           @relation("OfficerCases")
+  auditLogs       AuditLog[]
+  citizenReports  CitizenReport[]
+
+  @@index([role])
+  @@index([deletedAt])
+}
+
+model Case {
+  id          String     @id @default(uuid()) @db.Uuid
+  caseNumber  String     @unique
+  title       String
+  description String?
+  status      CaseStatus @default(OPEN)
+  officerId   String?    @db.Uuid
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  deletedAt   DateTime?
+
+  officer          User?             @relation("OfficerCases", fields: [officerId], references: [id])
+  alerts           Alert[]
+  scamSessions     ScamSession[]
+  currencyReports  CurrencyReport[]
+  evidencePackages EvidencePackage[]
+  citizenReports   CitizenReport[]
+
+  @@index([status])
+  @@index([officerId])
+  @@index([deletedAt])
+}
+
+model Alert {
+  id        String        @id @default(uuid()) @db.Uuid
+  caseId    String?       @db.Uuid
+  title     String
+  message   String
+  severity  AlertSeverity @default(MEDIUM)
+  status    AlertStatus   @default(ACTIVE)
+  metadata  Json?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  deletedAt DateTime?
+
+  case Case? @relation(fields: [caseId], references: [id])
+
+  @@index([severity])
+  @@index([status])
+  @@index([deletedAt])
+}
+
+model ScamSession {
+  id            String    @id @default(uuid()) @db.Uuid
+  caseId        String?   @db.Uuid
+  phoneNumber   String
+  transcript    String    @db.Text
+  scamScore     Float     @default(0.0)
+  deepfakeScore Float     @default(0.0)
+  impersonation String?
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+
+  case Case? @relation(fields: [caseId], references: [id])
+
+  @@index([phoneNumber])
+  @@index([isActive])
+  @@index([deletedAt])
+}
+
+model CurrencyReport {
+  id             String       @id @default(uuid()) @db.Uuid
+  caseId         String?      @db.Uuid
+  denomination   Denomination @default(INR_500)
+  serialNumber   String
+  imagePath      String?
+  confidence     Float        @default(0.0)
+  isCounterfeit  Boolean      @default(false)
+  latitude       Float?
+  longitude      Float?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  deletedAt      DateTime?
+
+  case Case? @relation(fields: [caseId], references: [id])
+
+  @@index([serialNumber])
+  @@index([isCounterfeit])
+  @@index([deletedAt])
+}
+
+model CitizenReport {
+  id             String    @id @default(uuid()) @db.Uuid
+  citizenId      String?   @db.Uuid
+  caseId         String?   @db.Uuid
+  reporterName   String
+  reporterPhone  String
+  incidentDetail String    @db.Text
+  incidentDate   DateTime
+  location       String?
+  riskLevel      String    @default("UNKNOWN")
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  citizen User? @relation(fields: [citizenId], references: [id])
+  case    Case? @relation(fields: [caseId], references: [id])
+
+  @@index([reporterPhone])
+  @@index([deletedAt])
+}
+
+model EvidencePackage {
+  id               String    @id @default(uuid()) @db.Uuid
+  caseId           String    @db.Uuid
+  filePath         String
+  sha256Hash       String    @unique
+  digitalSignature String
+  signedBy         String
+  createdAt        DateTime  @default(now())
+  deletedAt        DateTime?
+
+  case Case @relation(fields: [caseId], references: [id])
+
+  @@index([caseId])
+  @@index([deletedAt])
+}
+
+model AuditLog {
+  id          String    @id @default(uuid()) @db.Uuid
+  userId      String?   @db.Uuid
+  action      String
+  description String?
+  ipAddress   String?
+  createdAt   DateTime  @default(now())
+  deletedAt   DateTime?
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([action])
+  @@index([createdAt])
+}
+
+model GeoEvent {
+  id           String    @id @default(uuid()) @db.Uuid
+  incidentType String
+  latitude     Float
+  longitude    Float
+  riskScore    Float     @default(0.0)
+  description  String?
+  createdAt    DateTime  @default(now())
+  deletedAt    DateTime?
+
+  @@index([incidentType])
+  @@index([createdAt])
+  @@index([deletedAt])
+}
