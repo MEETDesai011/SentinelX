@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Shield, AlertTriangle, Users, MapPin, Search, Activity, FileText, 
-  Map, DollarSign, Upload, Bell, ChevronRight, Cpu, RefreshCw
+  Map, DollarSign, Upload, Bell, ChevronRight, Cpu, RefreshCw, Play
 } from 'lucide-react';
+import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
 
 // --- MOCK DATA FOR MVP VIEWS ---
 
@@ -35,6 +36,19 @@ const AGENT_LIST = [
   { name: "OrchestratorAgent", objective: "Direct mesh state machine", status: "ACTIVE", load: "5%", model: "Ray Event Queue" }
 ];
 
+const PLANNED_AGENT_LIST = [
+  { name: "CarrierInterceptorAgent", objective: "Detect CLI spoofing & Intercept VoIP routing", status: "PLANNED", load: "0%", model: "Core Network IMS Interceptor" },
+  { name: "IccIDSyncAgent", objective: "Verify SIM registration against central DB", status: "PLANNED", load: "0%", model: "Sanchar Saathi Sync" },
+  { name: "DeviceTelemetryAgent", objective: "Identify device IMEI modifications", status: "PLANNED", load: "0%", model: "CEIR Database Sync" },
+  { name: "DeepfakeAcousticAgent", objective: "Analyze voice packets for synthetic features", status: "PLANNED", load: "0%", model: "Acoustic ViT Deepfake Classifier" },
+  { name: "BhashiniBridgeAgent", objective: "Dynamic translation layer for regional dialects", status: "PLANNED", load: "0%", model: "Bhashini Translation API" },
+  { name: "PostalRouteAgent", objective: "Track counterfeit note source parcels", status: "PLANNED", load: "0%", model: "India Post API Sync" },
+  { name: "RegulatorySyncAgent", objective: "Report frozen accounts directly to MHA cyber bureau", status: "PLANNED", load: "0%", model: "MHA Bureau Sync" },
+  { name: "MHAAlertAgent", objective: "Broadcast scam warnings to nearby mobile towers", status: "PLANNED", load: "0%", model: "Cell Broadcast Bridge" },
+  { name: "BankApiWebhookAgent", objective: "Sync freezes to non-partner bank accounts", status: "PLANNED", load: "0%", model: "NPCI API Gateway v3" },
+  { name: "AutomatedTriageAgent", objective: "Categorize incoming citizen reports automatically", status: "PLANNED", load: "0%", model: "LLaMA-3-8B Fine-tuned" }
+];
+
 const HOTSPOT_PINS = [
   { type: "DIGITAL_ARREST", lat: 19.0760, lng: 72.8777, score: 0.92, desc: "Bandra East Call Centroid", city: "Mumbai" },
   { type: "COUNTERFEIT", lat: 18.9220, lng: 72.8347, score: 0.85, desc: "Colaba Retailer Scan Node", city: "Mumbai" },
@@ -46,12 +60,41 @@ const HOTSPOT_PINS = [
 ];
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'home' | 'scam' | 'graph' | 'currency' | 'reports' | 'evidence' | 'agents'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'triage' | 'scam' | 'graph' | 'currency' | 'reports' | 'evidence' | 'agents'>('home');
   const [sessions, setSessions] = useState(INITIAL_SESSIONS);
   const [activeSessionId, setActiveSessionId] = useState<string>("SESS-8921");
   const [currencyFile, setCurrencyFile] = useState<string | null>(null);
   const [currencyResult, setCurrencyResult] = useState<any | null>(null);
   const [scanning, setScanning] = useState(false);
+
+  // Live Incident Simulator States
+  const [simStep, setSimStep] = useState<number>(0);
+  const [simActive, setSimActive] = useState<boolean>(false);
+  const [simTranscript, setSimTranscript] = useState<string>("");
+
+  // Incident simulator timer loop
+  useEffect(() => {
+    let interval: any;
+    if (simActive) {
+      interval = setInterval(() => {
+        setSimStep(prev => {
+          if (prev >= 6) {
+            setSimActive(false);
+            clearInterval(interval);
+            return 6;
+          }
+          const nextStep = prev + 1;
+          if (nextStep === 1) {
+            setSimTranscript("Transcript (Connecting...): Incoming secure VoIP citizen tunnel established. Audio feed sync active...");
+          } else if (nextStep === 2) {
+            setSimTranscript("Transcript: 'This is Inspector Raghavan from CBI Headquarters. A parcel containing illicit narcotics was registered under your Aadhaar ID. Transfer all bank funds to our verification vault immediately or face arrest.'");
+          }
+          return nextStep;
+        });
+      }, 4500);
+    }
+    return () => clearInterval(interval);
+  }, [simActive]);
   
   // Real-time call transcript stream simulation
   useEffect(() => {
@@ -119,6 +162,13 @@ export default function App() {
             >
               <Map className="w-5 h-5" />
               Command Home
+            </button>
+            <button 
+              onClick={() => setActiveTab('triage')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${activeTab === 'triage' ? 'bg-red-500/10 text-red-400 border-l-4 border-red-500' : 'text-red-400/80 hover:bg-slate-800 hover:text-red-400'}`}
+            >
+              <Play className="w-5 h-5 animate-pulse" />
+              Incident Simulator
             </button>
             <button 
               onClick={() => setActiveTab('scam')}
@@ -243,41 +293,37 @@ export default function App() {
                     <span className="bg-teal-500/10 text-teal-400 text-xs px-2.5 py-1 rounded-full font-medium">Live Pins</span>
                   </div>
                   
-                  {/* Vector SVG India Map Projection Simulator */}
-                  <div className="h-96 w-full rounded-lg border border-slate-700 bg-slate-950 relative overflow-hidden flex items-center justify-center">
-                    <svg className="absolute w-full h-full text-slate-800" viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="0.5">
-                      <path d="M50 5 L70 30 L80 60 L60 90 L40 90 L20 70 L15 50 L30 20 Z" fill="#1e293b" fillOpacity="0.3" stroke="#334155" strokeWidth="1" />
-                    </svg>
-                    
-                    {/* Render active pins */}
-                    {HOTSPOT_PINS.map((pin, i) => {
-                      // Project coordinates onto 100x100 SVG space
-                      // Lat range approx 8 to 37 -> Y coordinates
-                      // Lng range approx 68 to 97 -> X coordinates
-                      const x = ((pin.lng - 68) / 29) * 80 + 10;
-                      const y = (1 - (pin.lat - 8) / 29) * 80 + 10;
-                      
-                      const isHigh = pin.score > 0.90;
-                      
-                      return (
-                        <div 
-                          key={i} 
-                          className="absolute group cursor-pointer"
-                          style={{ left: `${x}%`, top: `${y}%` }}
-                        >
-                          <div className={`w-3.5 h-3.5 rounded-full ${isHigh ? 'bg-red-500' : 'bg-amber-500'} border-2 border-slate-900 relative shadow-lg`}>
-                            <span className="absolute -inset-1 rounded-full bg-red-400 animate-ping opacity-75"></span>
-                          </div>
-                          {/* Tooltip */}
-                          <div className="hidden group-hover:block absolute bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 border border-slate-700 p-2.5 rounded-lg shadow-xl text-xs z-50 w-44">
-                            <p className="font-bold text-white">{pin.city} - {pin.type}</p>
-                            <p className="text-slate-400 mt-1">{pin.desc}</p>
-                            <p className="text-teal-400 font-semibold mt-1">Hazard Index: {(pin.score * 100).toFixed(0)}%</p>
-                          </div>
-                        </div>
-                      );
-                    })}
-                    <div className="absolute bottom-4 left-4 bg-slate-900/90 border border-slate-800 p-3 rounded-lg text-xs space-y-1">
+                  {/* React-Leaflet India Heatmap (Pillar 4 MVP) */}
+                  <div className="h-96 w-full rounded-lg border border-slate-700 bg-slate-950 relative overflow-hidden">
+                    <div style={{ height: '100%', width: '100%', filter: 'invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%)' }}>
+                      <MapContainer center={[20.5937, 78.9629]} zoom={5} scrollWheelZoom={false} style={{ height: '100%', width: '100%' }} zoomControl={false}>
+                        <TileLayer
+                          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                        />
+                        {HOTSPOT_PINS.map((pin, i) => (
+                          <CircleMarker
+                            key={i}
+                            center={[pin.lat, pin.lng]}
+                            radius={8}
+                            fillColor={pin.score > 0.90 ? "#ef4444" : "#f59e0b"}
+                            color="#0f172a"
+                            weight={2}
+                            fillOpacity={0.85}
+                          >
+                            <Popup>
+                              <div className="text-slate-900 p-1 font-sans">
+                                <p className="font-bold text-xs">{pin.city} - {pin.type}</p>
+                                <p className="text-[10px] text-slate-600 mt-0.5">{pin.desc}</p>
+                                <p className="text-teal-600 font-bold text-[10px] mt-0.5">Threat Index: {(pin.score * 100).toFixed(0)}%</p>
+                              </div>
+                            </Popup>
+                          </CircleMarker>
+                        ))}
+                      </MapContainer>
+                    </div>
+                    {/* Map Legend Overlay */}
+                    <div className="absolute bottom-4 left-4 bg-slate-900/95 border border-slate-800 p-3 rounded-lg text-xs space-y-1 z-[1000]">
                       <p className="font-bold text-white">Legend</p>
                       <div className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-red-500"></span> Critical threat (Score &gt; 90)</div>
                       <div className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Moderate threat (Score &lt; 90)</div>
@@ -317,6 +363,308 @@ export default function App() {
                     View All Active Sessions
                     <ChevronRight className="w-4 h-4" />
                   </button>
+                </div>
+
+              </div>
+            </div>
+          )}
+
+          {/* TAB 1.5: LIVE INCIDENT SIMULATOR (WOW FLOW SCREEN) */}
+          {activeTab === 'triage' && (
+            <div className="space-y-8">
+              <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl shadow-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                  <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                    <Play className="w-6 h-6 text-red-500 animate-pulse" />
+                    SentinelX V7 Coercive Cyber Incident Pipeline Simulator
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Traces a unified multi-pillar response flow in real-time, bridging citizen speech ingestion, deep NLP scoring, inter-bank block webhooks, and geocoded mapping.
+                  </p>
+                </div>
+                
+                <button
+                  onClick={() => {
+                    setSimActive(true);
+                    setSimStep(0);
+                    setSimTranscript("Initializing secure connection...");
+                  }}
+                  disabled={simActive}
+                  className={`px-5 py-3 rounded-lg font-bold text-sm tracking-wide transition-all shadow-lg flex items-center gap-2 ${simActive ? 'bg-slate-850 text-slate-500 cursor-not-allowed' : 'bg-red-650 hover:bg-red-600 text-white animate-bounce'}`}
+                >
+                  <RefreshCw className={`w-4 h-4 ${simActive ? 'animate-spin' : ''}`} />
+                  {simActive ? 'Simulation Running...' : 'Initiate Active Mitigation Demo'}
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                
+                {/* TIMELINE STEPPER (Left Panel) */}
+                <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl shadow-lg space-y-6">
+                  <h4 className="font-bold text-sm text-slate-400 uppercase tracking-wider">Mitigation Pipeline Stages</h4>
+                  
+                  <div className="relative border-l border-slate-800 ml-3 pl-6 space-y-6">
+                    
+                    {/* STEP 1 */}
+                    <div className="relative">
+                      <span className={`absolute -left-9 top-0.5 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all ${simStep >= 1 ? 'bg-red-500 text-white' : 'bg-slate-850 text-slate-500'}`}>1</span>
+                      <p className={`text-sm font-semibold transition-all ${simStep >= 1 ? 'text-white' : 'text-slate-500'}`}>Citizen Call Ingestion</p>
+                      <p className="text-[10px] text-slate-500 mt-0.5">Ingesting live voice stream from user mobile node</p>
+                    </div>
+
+                    {/* STEP 2 */}
+                    <div className="relative">
+                      <span className={`absolute -left-9 top-0.5 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all ${simStep >= 2 ? 'bg-red-500 text-white' : 'bg-slate-850 text-slate-500'}`}>2</span>
+                      <p className={`text-sm font-semibold transition-all ${simStep >= 2 ? 'text-white' : 'text-slate-500'}`}>AI Scam Trigger Verdict</p>
+                      <p className="text-[10px] text-slate-500 mt-0.5">NLP trigger checks & voice deepfake scoring</p>
+                    </div>
+
+                    {/* STEP 3 */}
+                    <div className="relative">
+                      <span className={`absolute -left-9 top-0.5 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all ${simStep >= 3 ? 'bg-red-500 text-white' : 'bg-slate-850 text-slate-500'}`}>3</span>
+                      <p className={`text-sm font-semibold transition-all ${simStep >= 3 ? 'text-white' : 'text-slate-500'}`}>Multi-Hop Trail Traversed</p>
+                      <p className="text-[10px] text-slate-500 mt-0.5">Neo4j query traces money flow routes</p>
+                    </div>
+
+                    {/* STEP 4 */}
+                    <div className="relative">
+                      <span className={`absolute -left-9 top-0.5 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all ${simStep >= 4 ? 'bg-red-500 text-white' : 'bg-slate-850 text-slate-500'}`}>4</span>
+                      <p className={`text-sm font-semibold transition-all ${simStep >= 4 ? 'text-white' : 'text-slate-500'}`}>Inter-Bank Isolation</p>
+                      <p className="text-[10px] text-slate-500 mt-0.5">Hold placed on Hop 1 & Hop 2 accounts</p>
+                    </div>
+
+                    {/* STEP 5 */}
+                    <div className="relative">
+                      <span className={`absolute -left-9 top-0.5 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all ${simStep >= 5 ? 'bg-red-500 text-white' : 'bg-slate-850 text-slate-500'}`}>5</span>
+                      <p className={`text-sm font-semibold transition-all ${simStep >= 5 ? 'text-white' : 'text-slate-500'}`}>Evidence Packaged & Signed</p>
+                      <p className="text-[10px] text-slate-500 mt-0.5">PDF ledger signed using secure HSM keys</p>
+                    </div>
+
+                    {/* STEP 6 */}
+                    <div className="relative">
+                      <span className={`absolute -left-9 top-0.5 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all ${simStep >= 6 ? 'bg-red-500 text-white' : 'bg-slate-850 text-slate-500'}`}>6</span>
+                      <p className={`text-sm font-semibold transition-all ${simStep >= 6 ? 'text-white' : 'text-slate-500'}`}>Geospatial Hotspot Mapped</p>
+                      <p className="text-[10px] text-slate-500 mt-0.5">Flashed caller IMEI/BTS coordinates on map</p>
+                    </div>
+
+                  </div>
+                </div>
+
+                {/* TELEMETRY VISUALIZATION (Right Panel) */}
+                <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl shadow-lg lg:col-span-2 flex flex-col justify-between min-h-[480px]">
+                  
+                  {/* DEFAULT / STEP 0 */}
+                  {simStep === 0 && (
+                    <div className="flex flex-col items-center justify-center h-full text-center p-8 space-y-4 my-auto">
+                      <Activity className="w-16 h-16 text-slate-750 animate-pulse" />
+                      <p className="text-slate-300 font-semibold text-lg">System Armed - Awaiting Simulation</p>
+                      <p className="text-xs text-slate-500 max-w-sm">Click "Initiate Active Mitigation Demo" above to witness the coordinated actor response in one unified loop.</p>
+                    </div>
+                  )}
+
+                  {/* STEP 1: VOICE CALL INGESTION */}
+                  {simStep === 1 && (
+                    <div className="space-y-6 my-auto">
+                      <div className="flex justify-between items-center border-b border-slate-800 pb-4">
+                        <span className="bg-blue-500/10 text-blue-400 text-xs px-2.5 py-1 rounded font-bold">1. VoIP Stream Ingestion</span>
+                        <span className="text-slate-500 text-xs font-mono">Caller ID: +91 98765 00112</span>
+                      </div>
+                      
+                      <div className="bg-slate-950 border border-slate-850 p-5 rounded-lg flex items-center gap-4">
+                        <span className="relative flex h-3 w-3">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                        </span>
+                        <p className="text-xs font-mono text-emerald-450">CONNECTING SECURE VOICE TRANSCRIPT CHANNEL...</p>
+                      </div>
+
+                      <div className="bg-slate-950 border border-slate-850 p-4 rounded text-sm text-slate-300 italic font-mono h-32 overflow-y-auto">
+                        "{simTranscript}"
+                      </div>
+                    </div>
+                  )}
+
+                  {/* STEP 2: AI SCAM VERDICT */}
+                  {simStep === 2 && (
+                    <div className="space-y-6 my-auto">
+                      <div className="flex justify-between items-center border-b border-slate-800 pb-4">
+                        <span className="bg-red-500/10 text-red-400 text-xs px-2.5 py-1 rounded font-bold">2. NLP & Deepfake Consensus</span>
+                        <span className="text-slate-500 text-xs font-mono">Verdict: CRITICAL (96% Risk)</span>
+                      </div>
+
+                      <div className="bg-slate-950 border border-slate-850 p-4 rounded-lg text-xs leading-relaxed space-y-2">
+                        <p className="font-bold text-white uppercase tracking-wider text-[10px] text-slate-400">Linguistic Script Triggers Checked:</p>
+                        <div className="flex flex-wrap gap-2 pt-1">
+                          <span className="bg-red-500/20 border border-red-500/40 text-red-400 px-2 py-0.5 rounded text-[10px] font-bold">CBI (Match: 0.95)</span>
+                          <span className="bg-red-500/20 border border-red-500/40 text-red-400 px-2 py-0.5 rounded text-[10px] font-bold">arrest (Match: 0.92)</span>
+                          <span className="bg-red-500/20 border border-red-500/40 text-red-400 px-2 py-0.5 rounded text-[10px] font-bold">narcotics (Match: 0.88)</span>
+                          <span className="bg-red-500/20 border border-red-500/40 text-red-400 px-2 py-0.5 rounded text-[10px] font-bold">verification vault (Match: 0.96)</span>
+                        </div>
+                      </div>
+
+                      <div className="bg-slate-950 border border-slate-850 p-4 rounded text-xs text-slate-300 font-mono h-32 overflow-y-auto leading-relaxed">
+                        "Transcript: 'This is Inspector Raghavan from <b className="text-red-400 underline">CBI</b> Headquarters. A parcel containing illicit <b className="text-red-400 underline">narcotics</b> was registered under your Aadhaar ID. Transfer all bank funds to our <b className="text-red-400 underline">verification vault</b> immediately or face <b className="text-red-400 underline">arrest</b>.'"
+                      </div>
+                    </div>
+                  )}
+
+                  {/* STEP 3: FRAUD GRAPH TRAVERSAL */}
+                  {simStep === 3 && (
+                    <div className="space-y-6 my-auto">
+                      <div className="flex justify-between items-center border-b border-slate-800 pb-4">
+                        <span className="bg-teal-500/10 text-teal-400 text-xs px-2.5 py-1 rounded font-bold">3. Neo4j Multi-Hop Flow Tracing</span>
+                        <span className="text-slate-500 text-xs font-mono">Consolidation Pattern: MATCHED</span>
+                      </div>
+
+                      <div className="h-56 bg-slate-950 border border-slate-850 rounded-lg relative overflow-hidden flex items-center justify-center">
+                        <svg className="w-full h-full" viewBox="0 0 600 200">
+                          <line x1="80" y1="100" x2="200" y2="60" stroke="#ef4444" strokeWidth="2" strokeDasharray="4" />
+                          <line x1="200" y1="60" x2="340" y2="60" stroke="#ef4444" strokeWidth="2" strokeDasharray="4" />
+                          <line x1="340" y1="60" x2="480" y2="100" stroke="#ef4444" strokeWidth="2" />
+                          
+                          <circle cx="80" cy="100" r="22" fill="#4b5563" />
+                          <text x="80" y="103" textAnchor="middle" fill="white" fontSize="7" fontWeight="bold">Complainant (SBI)</text>
+                          
+                          <circle cx="200" cy="60" r="22" fill="#ef4444" />
+                          <text x="200" y="63" textAnchor="middle" fill="white" fontSize="7" fontWeight="bold">Mule 1 (HDFC)</text>
+                          <text x="200" y="96" textAnchor="middle" fill="#8892b0" fontSize="7">BA-HDFC-9921</text>
+                          
+                          <circle cx="340" cy="60" r="22" fill="#ef4444" />
+                          <text x="340" y="63" textAnchor="middle" fill="white" fontSize="7" fontWeight="bold">Mule 2 (ICICI)</text>
+                          <text x="340" y="96" textAnchor="middle" fill="#8892b0" fontSize="7">BA-ICICI-8812</text>
+                          
+                          <circle cx="480" cy="100" r="22" fill="#ef4444" />
+                          <text x="480" y="103" textAnchor="middle" fill="white" fontSize="7" fontWeight="bold">Cash Out (BOB)</text>
+                          
+                          <text x="140" y="70" textAnchor="middle" fill="#ef4444" fontSize="7" fontWeight="bold">₹2,50,000</text>
+                          <text x="270" y="50" textAnchor="middle" fill="#ef4444" fontSize="7" fontWeight="bold">₹2,40,000</text>
+                          <text x="410" y="75" textAnchor="middle" fill="#ef4444" fontSize="7" fontWeight="bold">₹2,35,000</text>
+                        </svg>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* STEP 4: INTER-BANK ACTION (LOCKDOWN) */}
+                  {simStep === 4 && (
+                    <div className="space-y-6 my-auto">
+                      <div className="flex justify-between items-center border-b border-slate-800 pb-4">
+                        <span className="bg-amber-500/10 text-amber-400 text-xs px-2.5 py-1 rounded font-bold">4. NPCI Inter-Bank Webhooks</span>
+                        <span className="text-slate-500 text-xs font-mono">Freezing Action: ACTIVE</span>
+                      </div>
+
+                      <div className="space-y-3 font-mono text-[10px]">
+                        <div className="border border-teal-500/35 bg-teal-500/5 p-3 rounded flex justify-between items-center">
+                          <div>
+                            <p className="text-teal-400 font-bold">POST http://api.hdfc.com/v1/accounts/BA-HDFC-9921/freeze</p>
+                            <p className="text-slate-500 text-[9px] mt-1">Payload: {"{hold_amount: 240000.0, incident_ref: 'SX-SIM-001'}"}</p>
+                          </div>
+                          <span className="bg-teal-500/20 text-teal-400 border border-teal-500/40 px-2 py-0.5 rounded font-bold">200 OK</span>
+                        </div>
+
+                        <div className="border border-teal-500/35 bg-teal-500/5 p-3 rounded flex justify-between items-center">
+                          <div>
+                            <p className="text-teal-400 font-bold">POST http://api.icici.com/v1/accounts/BA-ICICI-8812/freeze</p>
+                            <p className="text-slate-500 text-[9px] mt-1">Payload: {"{hold_amount: 235000.0, incident_ref: 'SX-SIM-001'}"}</p>
+                          </div>
+                          <span className="bg-teal-500/20 text-teal-400 border border-teal-500/40 px-2 py-0.5 rounded font-bold">200 OK</span>
+                        </div>
+
+                        <div className="bg-red-950/20 border border-red-500/30 p-3 rounded flex justify-between items-center">
+                          <span className="text-red-400 font-bold uppercase tracking-wider text-[9px]">Total Blocked Capital</span>
+                          <span className="text-red-400 font-extrabold text-sm">₹2,40,000 (Hop 1 Freezing Secured)</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* STEP 5: EVIDENCE LEDGER PDF */}
+                  {simStep === 5 && (
+                    <div className="space-y-6 my-auto">
+                      <div className="flex justify-between items-center border-b border-slate-800 pb-4">
+                        <span className="bg-violet-500/10 text-violet-400 text-xs px-2.5 py-1 rounded font-bold">5. Evidence Package Generation</span>
+                        <span className="text-slate-500 text-xs font-mono">Sec 65B Compliant</span>
+                      </div>
+
+                      <div className="border border-slate-300 bg-white text-slate-850 p-4 rounded space-y-4 max-h-56 overflow-y-auto text-[10px]">
+                        <div className="flex justify-between items-center border-b border-slate-350 pb-2">
+                          <h5 className="font-extrabold text-slate-900">SENTINELX DIGITAL FORENSIC REPORT</h5>
+                          <span className="text-emerald-600 font-bold border border-emerald-500 px-1 py-0.5 text-[8px] uppercase rounded">Legally Signed</span>
+                        </div>
+                        <table className="w-full text-left border-collapse border border-slate-300">
+                          <tbody>
+                            <tr className="bg-slate-50 border-b border-slate-300">
+                              <td className="p-1 font-bold">Case Reference</td>
+                              <td className="p-1">SX-CASE-SIM-2026-9811</td>
+                            </tr>
+                            <tr className="border-b border-slate-300">
+                              <td className="p-1 font-bold">AI Verdict</td>
+                              <td className="p-1 text-red-650 font-bold">CRITICAL DIGITAL ARREST PATTERN MATCHED</td>
+                            </tr>
+                            <tr className="bg-slate-50 border-b border-slate-300">
+                              <td className="p-1 font-bold">SHA-256 Checksum</td>
+                              <td className="p-1 font-mono text-[9px]">4a9b2c3d8e9f1a2b3c4d5e6f7a8b9c0d1e2f3a4b...</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                        <p className="leading-relaxed text-slate-500 italic">
+                          "This document details critical audio metadata, transcript script indexes, and NPCI interbank transfer links, sealed cryptographically to ensure chain of custody under Section 65B of the Indian Evidence Act."
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* STEP 6: GEOSPATIAL MAP INCIDENT PINS */}
+                  {simStep === 6 && (
+                    <div className="space-y-6 my-auto">
+                      <div className="flex justify-between items-center border-b border-slate-800 pb-4">
+                        <span className="bg-red-500/10 text-red-400 text-xs px-2.5 py-1 rounded font-bold">6. Geospatial Threat Mapping</span>
+                        <span className="text-slate-500 text-xs font-mono">Location: Noida, Sec 62</span>
+                      </div>
+
+                      {/* React Leaflet mini-map centering on Noida/Delhi coordinates */}
+                      <div className="h-56 w-full rounded-lg border border-slate-800 bg-slate-950 relative overflow-hidden">
+                        <div style={{ height: '100%', width: '100%', filter: 'invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%)' }}>
+                          <MapContainer center={[28.6139, 77.2090]} zoom={8} scrollWheelZoom={false} style={{ height: '100%', width: '100%' }} zoomControl={false}>
+                            <TileLayer
+                              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                            />
+                            <CircleMarker
+                              center={[28.5355, 77.3910]} // Noida call center
+                              radius={14}
+                              fillColor="#ef4444"
+                              color="#0f172a"
+                              weight={2}
+                              fillOpacity={0.7}
+                            >
+                              <Popup>
+                                <div className="text-slate-900 font-sans p-1 text-xs">
+                                  <p className="font-bold text-red-650">Simulated Scam Call Cell</p>
+                                  <p className="text-[10px] mt-0.5">Noida Sec 62 Centroid Node</p>
+                                </div>
+                              </Popup>
+                            </CircleMarker>
+                          </MapContainer>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* STEP PROGRESS METER */}
+                  {simStep > 0 && (
+                    <div className="pt-4 border-t border-slate-800">
+                      <div className="flex justify-between text-xs text-slate-500 mb-1">
+                        <span>Simulation Progress</span>
+                        <span>{Math.round((simStep / 6) * 100)}%</span>
+                      </div>
+                      <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                        <div 
+                          className="bg-red-500 h-full transition-all duration-500" 
+                          style={{ width: `${(simStep / 6) * 100}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  )}
+
                 </div>
 
               </div>
@@ -679,11 +1027,15 @@ export default function App() {
 
           {/* TAB 7: AGENT MONITOR */}
           {activeTab === 'agents' && (
-            <div className="space-y-6">
+            <div className="space-y-8">
+              {/* Active MVP Agents Section */}
               <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl shadow-lg space-y-4">
                 <div className="flex justify-between items-center mb-2">
-                  <h4 className="font-bold text-lg text-white">SentinelMesh Actor Network Heartbeats</h4>
-                  <span className="bg-teal-500/10 text-teal-400 text-xs px-2.5 py-1 rounded-full font-medium">7 Active Actors</span>
+                  <div>
+                    <h4 className="font-bold text-lg text-white">SentinelMesh Actor Network Heartbeats (MVP Layer)</h4>
+                    <p className="text-xs text-slate-400 mt-1">Core decentralized agents executing active mitigation scripts on local sandbox containers.</p>
+                  </div>
+                  <span className="bg-emerald-500/10 text-emerald-400 text-xs px-2.5 py-1 rounded-full font-medium">7 Active Actors</span>
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -707,6 +1059,44 @@ export default function App() {
                         <div>
                           <p className="text-slate-500">Target Model</p>
                           <p className="font-bold text-teal-400 mt-1">{agent.model}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Planned Enterprise Agents Section */}
+              <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl shadow-lg space-y-4">
+                <div className="flex justify-between items-center mb-2">
+                  <div>
+                    <h4 className="font-bold text-lg text-white">Enterprise Production Expansion Network</h4>
+                    <p className="text-xs text-slate-400 mt-1">Stubs and API interfaces prepared for full national deployment integrations.</p>
+                  </div>
+                  <span className="bg-blue-500/10 text-blue-400 text-xs px-2.5 py-1 rounded-full font-medium">10 Planned Actors</span>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {PLANNED_AGENT_LIST.map((agent, index) => (
+                    <div key={index} className="bg-slate-800/40 border border-slate-850 p-5 rounded-lg space-y-4 relative overflow-hidden opacity-60">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h5 className="font-bold text-slate-300 text-sm">{agent.name}</h5>
+                          <p className="text-[10px] text-slate-500 mt-1">{agent.objective}</p>
+                        </div>
+                        <span className="bg-slate-800 text-slate-500 text-[10px] px-2 py-0.5 rounded font-bold uppercase border border-slate-700">
+                          {agent.status}
+                        </span>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4 text-xs pt-3 border-t border-slate-800">
+                        <div>
+                          <p className="text-slate-600">Core Weight Load</p>
+                          <p className="font-bold text-slate-500 mt-1">{agent.load}</p>
+                        </div>
+                        <div>
+                          <p className="text-slate-600">Target Spec</p>
+                          <p className="font-bold text-slate-500 mt-1 truncate">{agent.model}</p>
                         </div>
                       </div>
                     </div>
