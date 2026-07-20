@@ -293,6 +293,77 @@ app.post('/api/v1/reports', authenticate, async (req: AuthenticatedRequest, res:
   }
 });
 
+// Update Report Status
+app.patch('/api/v1/reports/:id/status', authenticate, authorize([UserRole.OFFICER, UserRole.ANALYST, UserRole.ADMIN]), async (req: AuthenticatedRequest, res: Response) => {
+  const { id } = req.params;
+  const { status, riskLevel } = req.body;
+  try {
+    const updatedReport = await prisma.citizenReport.update({
+      where: { id },
+      data: {
+        ...(riskLevel && { riskLevel }),
+        updatedAt: new Date(),
+      },
+    });
+    return res.json({ message: 'Report status updated successfully', report: updatedReport, status });
+  } catch (err) {
+    return res.status(500).json({ error: 'Failed to update report status' });
+  }
+});
+
+// Cases Endpoints
+app.get('/api/v1/cases', authenticate, authorize([UserRole.OFFICER, UserRole.ANALYST, UserRole.ADMIN]), async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const cases = await prisma.case.findMany({
+      where: { deletedAt: null },
+      orderBy: { createdAt: 'desc' },
+      include: { citizenReports: true },
+    });
+    return res.json(cases);
+  } catch (err) {
+    return res.status(500).json({ error: 'Failed to fetch cases' });
+  }
+});
+
+app.post('/api/v1/cases', authenticate, authorize([UserRole.OFFICER, UserRole.ANALYST, UserRole.ADMIN]), async (req: AuthenticatedRequest, res: Response) => {
+  const { title, description, status, officerId } = req.body;
+  if (!title) {
+    return res.status(400).json({ error: 'Title is required' });
+  }
+  try {
+    const caseNumber = `SX-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+    const newCase = await prisma.case.create({
+      data: {
+        caseNumber,
+        title,
+        description,
+        status: status || 'OPEN',
+        officerId: officerId || req.user?.id,
+      },
+    });
+    return res.status(201).json(newCase);
+  } catch (err) {
+    return res.status(500).json({ error: 'Failed to create case' });
+  }
+});
+
+app.patch('/api/v1/cases/:id/status', authenticate, authorize([UserRole.OFFICER, UserRole.ANALYST, UserRole.ADMIN]), async (req: AuthenticatedRequest, res: Response) => {
+  const { id } = req.params;
+  const { status } = req.body;
+  if (!status) {
+    return res.status(400).json({ error: 'Status is required' });
+  }
+  try {
+    const updatedCase = await prisma.case.update({
+      where: { id },
+      data: { status, updatedAt: new Date() },
+    });
+    return res.json(updatedCase);
+  } catch (err) {
+    return res.status(500).json({ error: 'Failed to update case status' });
+  }
+});
+
 // App Health
 app.get('/health', (req, res) => {
   return res.json({ status: 'UP', service: 'sentinelx-api-gateway' });

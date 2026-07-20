@@ -1,11 +1,187 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Shield, AlertTriangle, Users, MapPin, Search, Activity, FileText, 
-  Map, DollarSign, Upload, Bell, ChevronRight, Cpu, RefreshCw, Play
+  Map, DollarSign, Upload, Bell, ChevronRight, Cpu, RefreshCw, Play,
+  Plus, Filter, X, CheckCircle2, ChevronDown, ChevronUp, FolderCheck, Lock, XCircle
 } from 'lucide-react';
 import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
 
-// --- MOCK DATA FOR MVP VIEWS ---
+// --- MOCK DATA & MASTER LOOKUPS ---
+
+export const CYBER_CRIME_CATEGORIES = [
+  "Email Frauds",
+  "Social Media crimes",
+  "Mobile App related crimes",
+  "Business Email Compromise",
+  "Data Theft",
+  "Ransomeware",
+  "Net Banking/ATM Frauds",
+  "Fake Calls Frauds",
+  "Insurance Frauds",
+  "Lottery Scam",
+  "Bitcoin",
+  "Cheating Scams",
+  "Online Transactions Frauds",
+  "Gift Card Frauds",
+  "FaceBook Friendship Frauds",
+  "FaceBook SOS Frauds",
+  "Fake Shopping Site Frauds",
+  "Fake Government Website Frauds",
+  "Herbal Oil Frauds",
+  "Job Frauds through Call Centres",
+  "OLX QR Code Frauds",
+  "KBC Lottery Frauds",
+  "PayTM KYC Frauds",
+  "Sextortion Frauds",
+  "Phishing-Vishing Fraud"
+];
+
+export const GOOGLE_MAPS_API_KEY = "AIzaSyB4ohqPSwHrEdQ-JQ2MJPePT6uOM-NOAS4";
+
+export const CITY_COORDINATES: Record<string, { lat: number; lng: number }> = {
+  // Maharashtra
+  "mumbai": { lat: 19.0760, lng: 72.8777 },
+  "bandra": { lat: 19.0596, lng: 72.8295 },
+  "colaba": { lat: 18.9067, lng: 72.8147 },
+  "andheri": { lat: 19.1136, lng: 72.8697 },
+  "pune": { lat: 18.5204, lng: 73.8567 },
+  "thane": { lat: 19.2183, lng: 72.9781 },
+  "nagpur": { lat: 21.1458, lng: 79.0882 },
+  "nashik": { lat: 19.9975, lng: 73.7898 },
+  "aurangabad": { lat: 19.8762, lng: 75.3433 },
+  "chhatrapati sambhajinagar": { lat: 19.8762, lng: 75.3433 },
+  "solapur": { lat: 17.6599, lng: 75.9064 },
+  "navi mumbai": { lat: 19.0330, lng: 73.0297 },
+  "kolhapur": { lat: 16.7050, lng: 74.2433 },
+  "amravati": { lat: 20.9374, lng: 77.7796 },
+
+  // Delhi NCR
+  "delhi": { lat: 28.6139, lng: 77.2090 },
+  "new delhi": { lat: 28.6139, lng: 77.2090 },
+  "connaught place": { lat: 28.6315, lng: 77.2167 },
+  "noida": { lat: 28.5355, lng: 77.3910 },
+  "gurgaon": { lat: 28.4595, lng: 77.0266 },
+  "gurugram": { lat: 28.4595, lng: 77.0266 },
+  "faridabad": { lat: 28.4089, lng: 77.3178 },
+  "ghaziabad": { lat: 28.6692, lng: 77.4538 },
+
+  // Karnataka
+  "bengaluru": { lat: 12.9716, lng: 77.5946 },
+  "bangalore": { lat: 12.9716, lng: 77.5946 },
+  "mysore": { lat: 12.2958, lng: 76.6394 },
+  "hubli": { lat: 15.3647, lng: 75.1240 },
+  "mangalore": { lat: 12.9141, lng: 74.8560 },
+
+  // West Bengal
+  "kolkata": { lat: 22.5726, lng: 88.3639 },
+  "salt lake": { lat: 22.5726, lng: 88.4120 },
+  "howrah": { lat: 22.5958, lng: 88.2636 },
+
+  // Telangana & AP
+  "hyderabad": { lat: 17.3850, lng: 78.4867 },
+  "secunderabad": { lat: 17.4399, lng: 78.4983 },
+  "visakhapatnam": { lat: 17.6868, lng: 83.2185 },
+  "vijayawada": { lat: 16.5062, lng: 80.6480 },
+
+  // Gujarat
+  "ahmedabad": { lat: 23.0225, lng: 72.5714 },
+  "surat": { lat: 21.1702, lng: 72.8311 },
+  "vadodara": { lat: 22.3072, lng: 73.1812 },
+  "rajkot": { lat: 22.3039, lng: 70.8022 },
+
+  // Rajasthan
+  "jaipur": { lat: 26.9124, lng: 75.7873 },
+  "jodhpur": { lat: 26.2389, lng: 73.0243 },
+  "udaipur": { lat: 24.5854, lng: 73.7125 },
+  "kota": { lat: 25.2138, lng: 75.8648 },
+
+  // Tamil Nadu & Kerala
+  "chennai": { lat: 13.0827, lng: 80.2707 },
+  "coimbatore": { lat: 11.0168, lng: 76.9558 },
+  "madurai": { lat: 9.9252, lng: 78.1198 },
+  "kochi": { lat: 9.9312, lng: 76.2673 },
+  "thiruvananthapuram": { lat: 8.5241, lng: 76.9366 },
+
+  // UP & MP & Punjab & Bihar & North East
+  "lucknow": { lat: 26.8467, lng: 80.9462 },
+  "kanpur": { lat: 26.4499, lng: 80.3319 },
+  "agra": { lat: 27.1767, lng: 78.0081 },
+  "varanasi": { lat: 25.3176, lng: 82.9739 },
+  "indore": { lat: 22.7196, lng: 75.8577 },
+  "bhopal": { lat: 23.2599, lng: 77.4126 },
+  "patna": { lat: 25.5941, lng: 85.1376 },
+  "chandigarh": { lat: 30.7333, lng: 76.7794 },
+  "amritsar": { lat: 31.6340, lng: 74.8723 },
+  "ludhiana": { lat: 30.9010, lng: 75.8573 },
+  "dehradun": { lat: 30.3165, lng: 78.0322 },
+  "ranchi": { lat: 23.3441, lng: 85.3096 },
+  "bhubaneswar": { lat: 20.2961, lng: 85.8245 },
+  "guwahati": { lat: 26.1445, lng: 91.7362 },
+  "shimla": { lat: 31.1048, lng: 77.1734 },
+  "srinagar": { lat: 34.0837, lng: 74.7973 },
+  "goa": { lat: 15.2993, lng: 74.1240 }
+};
+
+export const geocodeWithGoogleMaps = async (locationStr: string) => {
+  if (!locationStr || locationStr.trim().length < 2) {
+    return { isValid: false, coords: null, formattedAddress: null, error: "Please enter a location." };
+  }
+
+  try {
+    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(locationStr)}&key=${GOOGLE_MAPS_API_KEY}`;
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (data.status === "OK" && data.results && data.results.length > 0) {
+      const firstResult = data.results[0];
+      const { lat, lng } = firstResult.geometry.location;
+      const formattedAddress = firstResult.formatted_address;
+
+      return {
+        isValid: true,
+        coords: { lat, lng },
+        formattedAddress,
+        error: null
+      };
+    } else {
+      const locLower = locationStr.toLowerCase().trim();
+      for (const [cityName, coords] of Object.entries(CITY_COORDINATES)) {
+        if (locLower.includes(cityName)) {
+          return {
+            isValid: true,
+            coords,
+            formattedAddress: locationStr,
+            error: null
+          };
+        }
+      }
+      return {
+        isValid: false,
+        coords: null,
+        formattedAddress: null,
+        error: `Google Maps could not resolve "${locationStr}". Please check your spelling or enter a recognized City, District, or Landmark (e.g. Bandra Mumbai, Pune, Noida, Connaught Place Delhi, HSR Layout Bengaluru).`
+      };
+    }
+  } catch (err) {
+    const locLower = locationStr.toLowerCase().trim();
+    for (const [cityName, coords] of Object.entries(CITY_COORDINATES)) {
+      if (locLower.includes(cityName)) {
+        return {
+          isValid: true,
+          coords,
+          formattedAddress: locationStr,
+          error: null
+        };
+      }
+    }
+    return {
+      isValid: false,
+      coords: null,
+      formattedAddress: null,
+      error: `Could not verify "${locationStr}". Please enter a recognized City or District name.`
+    };
+  }
+};
 
 const INITIAL_KPIS = [
   { title: "Active Scam Streams", value: "3", change: "+12%", trend: "up", icon: Activity, color: "text-amber-500" },
@@ -15,15 +191,15 @@ const INITIAL_KPIS = [
 ];
 
 const INITIAL_SESSIONS = [
-  { id: "SESS-8921", caller: "+919876500112", risk: 0.94, impersonating: "CBI Officer Raghavan", status: "LOCK_BANK_APPS", timestamp: "17:42:01", transcript: "You are under digital arrest. Do not disconnect the camera. Transfer your account balance to CBI verification vault." },
-  { id: "SESS-8922", caller: "+919123499218", risk: 0.72, impersonating: "FedEx / Customs", status: "WARN_CITIZEN", timestamp: "17:44:32", transcript: "We found illegal drugs in a package sent under your Aadhaar card number. Pay 45000 rupees clearance fee." },
-  { id: "SESS-8923", caller: "+918889997771", risk: 0.35, impersonating: "TRAI Compliance", status: "MONITORING", timestamp: "17:45:10", transcript: "Your SIM card will be deactivated in 2 hours due to illegal advertising. Confirm details to keep active." }
+  { id: "SESS-8921", caller: "+919876500112", risk: 0.94, impersonating: "CBI Officer Raghavan", status: "LOCK_BANK_APPS", timestamp: "17:42:01", transcript: "You are under digital arrest. Do not disconnect the camera. Transfer your account balance to CBI verification vault.", priority: "CRITICAL", location: "Mumbai" },
+  { id: "SESS-8922", caller: "+919123499218", risk: 0.72, impersonating: "FedEx / Customs", status: "WARN_CITIZEN", timestamp: "17:44:32", transcript: "We found illegal drugs in a package sent under your Aadhaar card number. Pay 45000 rupees clearance fee.", priority: "HIGH", location: "Noida" },
+  { id: "SESS-8923", caller: "+918889997771", risk: 0.35, impersonating: "TRAI Compliance", status: "MONITORING", timestamp: "17:45:10", transcript: "Your SIM card will be deactivated in 2 hours due to illegal advertising. Confirm details to keep active.", priority: "MEDIUM", location: "Delhi" }
 ];
 
 const INITIAL_REPORTS = [
-  { id: "REP-401", reporter: "Rajesh Sharma", phone: "+919811223344", detail: "Extorted via WhatsApp video call by impersonator in police uniform.", location: "Mumbai", date: "22 Jun 17:15", status: "INVESTIGATING" },
-  { id: "REP-402", reporter: "Sunita Vyas", phone: "+919922003344", detail: "Received fraudulent call from FedEx Customs demanding package clearance transfer.", location: "Noida", date: "22 Jun 16:30", status: "RESOLVED" },
-  { id: "REP-403", reporter: "Mohan Lal", phone: "+919321456789", detail: "UPI money mule account request for online task group.", location: "Salt Lake, Kolkata", date: "22 Jun 15:45", status: "OPEN" }
+  { id: "REP-401", reporter: "Rajesh Sharma", phone: "+919811223344", crimeCategory: "Sextortion Frauds", detail: "Extorted via WhatsApp video call by impersonator in police uniform.", location: "Mumbai", date: "22 Jun 17:15", status: "INVESTIGATING", priority: "HIGH" },
+  { id: "REP-402", reporter: "Sunita Vyas", phone: "+919922003344", crimeCategory: "Phishing-Vishing Fraud", detail: "Received fraudulent call from FedEx Customs demanding package clearance transfer.", location: "Noida", date: "22 Jun 16:30", status: "RESOLVED", priority: "MEDIUM" },
+  { id: "REP-403", reporter: "Mohan Lal", phone: "+919321456789", crimeCategory: "OLX QR Code Frauds", detail: "UPI money mule account request for online task group.", location: "Salt Lake, Kolkata", date: "22 Jun 15:45", status: "OPEN", priority: "CRITICAL" }
 ];
 
 const AGENT_LIST = [
@@ -50,13 +226,13 @@ const PLANNED_AGENT_LIST = [
 ];
 
 const HOTSPOT_PINS = [
-  { type: "DIGITAL_ARREST", lat: 19.0760, lng: 72.8777, score: 0.92, desc: "Bandra East Call Centroid", city: "Mumbai" },
-  { type: "COUNTERFEIT", lat: 18.9220, lng: 72.8347, score: 0.85, desc: "Colaba Retailer Scan Node", city: "Mumbai" },
-  { type: "FRAUD_NETWORK", lat: 19.2183, lng: 72.9781, score: 0.97, desc: "Thane ATM Cash Out Group", city: "Thane" },
-  { type: "DIGITAL_ARREST", lat: 28.6139, lng: 77.2090, score: 0.89, desc: "ED Impersonation Centroid", city: "Delhi" },
-  { type: "COUNTERFEIT", lat: 28.5355, lng: 77.3910, score: 0.94, desc: "Noida Sec 62 Retail Node", city: "Noida" },
-  { type: "FRAUD_NETWORK", lat: 22.5726, lng: 88.3639, score: 0.98, desc: "Mule Bank Registry", city: "Kolkata" },
-  { type: "DIGITAL_ARREST", lat: 12.9716, lng: 77.5946, score: 0.76, desc: "Customs extortion centroid", city: "Bengaluru" },
+  { type: "DIGITAL_ARREST", lat: 19.0760, lng: 72.8777, priority: "CRITICAL", desc: "Bandra East Call Centroid", city: "Mumbai" },
+  { type: "COUNTERFEIT", lat: 18.9220, lng: 72.8347, priority: "HIGH", desc: "Colaba Retailer Scan Node", city: "Mumbai" },
+  { type: "FRAUD_NETWORK", lat: 19.2183, lng: 72.9781, priority: "CRITICAL", desc: "Thane ATM Cash Out Group", city: "Thane" },
+  { type: "DIGITAL_ARREST", lat: 28.6139, lng: 77.2090, priority: "HIGH", desc: "ED Impersonation Centroid", city: "Delhi" },
+  { type: "COUNTERFEIT", lat: 28.5355, lng: 77.3910, priority: "CRITICAL", desc: "Noida Sec 62 Retail Node", city: "Noida" },
+  { type: "FRAUD_NETWORK", lat: 22.5726, lng: 88.3639, priority: "CRITICAL", desc: "Mule Bank Registry", city: "Kolkata" },
+  { type: "DIGITAL_ARREST", lat: 12.9716, lng: 77.5946, priority: "MEDIUM", desc: "Customs extortion centroid", city: "Bengaluru" },
 ];
 
 export default function App() {
@@ -66,6 +242,142 @@ export default function App() {
   const [currencyFile, setCurrencyFile] = useState<string | null>(null);
   const [currencyResult, setCurrencyResult] = useState<any | null>(null);
   const [scanning, setScanning] = useState(false);
+
+  // Case & Report Management State
+  const [reports, setReports] = useState(INITIAL_REPORTS);
+  const [reportSearch, setReportSearch] = useState<string>('');
+  const [reportStatusFilter, setReportStatusFilter] = useState<string>('ALL');
+  const [isAddCaseOpen, setIsAddCaseOpen] = useState<boolean>(false);
+  const [showClosedCases, setShowClosedCases] = useState<boolean>(true);
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [newCaseForm, setNewCaseForm] = useState({
+    reporter: '',
+    phone: '',
+    crimeCategory: 'Phishing-Vishing Fraud',
+    detail: '',
+    location: '',
+    status: 'OPEN',
+    priority: 'HIGH'
+  });
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => {
+      setToastMessage(null);
+    }, 4000);
+  };
+
+  const validateAndGeocodeLocation = (locationStr: string) => {
+    if (!locationStr || locationStr.trim().length < 2) {
+      return { isValid: false, coords: null };
+    }
+    const locLower = locationStr.toLowerCase().trim();
+    for (const [cityName, coords] of Object.entries(CITY_COORDINATES)) {
+      if (locLower.includes(cityName)) {
+        return { isValid: true, coords, cityName };
+      }
+    }
+    return { isValid: false, coords: null };
+  };
+
+  const resolveCityCoords = (locationStr: string) => {
+    const locCheck = validateAndGeocodeLocation(locationStr);
+    if (locCheck.isValid && locCheck.coords) {
+      return locCheck.coords;
+    }
+    let hash = 0;
+    for (let i = 0; i < (locationStr || '').length; i++) {
+      hash = locationStr.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const latOffset = ((hash % 100) / 100) * 6 - 3;
+    const lngOffset = (((hash >> 2) % 100) / 100) * 6 - 3;
+    return {
+      lat: 20.5937 + latOffset,
+      lng: 78.9629 + lngOffset
+    };
+  };
+
+  const handleUpdateReportStatus = (id: string, newStatus: string) => {
+    setReports(prev => prev.map(rep => rep.id === id ? { ...rep, status: newStatus } : rep));
+    if (newStatus === 'CLOSED') {
+      showToast(`Case ${id} CLOSED & moved to Closed Cases subdivision.`);
+    } else {
+      showToast(`Case ${id} status updated to ${newStatus}`);
+    }
+    
+    fetch(`/api/v1/reports/${id}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: newStatus })
+    }).catch(() => {});
+  };
+
+  const handleUpdateSessionStatus = (id: string, newStatus: string) => {
+    setSessions(prev => prev.map(sess => sess.id === id ? { ...sess, status: newStatus } : sess));
+    if (newStatus === 'CLOSED') {
+      showToast(`Scam session ${id} CLOSED & archived.`);
+    } else {
+      showToast(`Session ${id} action updated to ${newStatus}`);
+    }
+  };
+
+  const [isValidatingLocation, setIsValidatingLocation] = useState<boolean>(false);
+
+  const handleCreateCase = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLocationError(null);
+
+    if (!newCaseForm.reporter || !newCaseForm.phone || !newCaseForm.detail) {
+      alert("Please fill in the Complainant Name, Phone Number, and Details.");
+      return;
+    }
+
+    if (!newCaseForm.location || newCaseForm.location.trim().length < 2) {
+      setLocationError("Location is required to plot threat pins on the map. Please enter a valid location.");
+      return;
+    }
+
+    setIsValidatingLocation(true);
+    const geoResult = await geocodeWithGoogleMaps(newCaseForm.location);
+    setIsValidatingLocation(false);
+
+    if (!geoResult.isValid) {
+      setLocationError(geoResult.error || `Location Unrecognized by Google Maps: Could not resolve "${newCaseForm.location}". Please check spelling or enter a valid city, district, or landmark.`);
+      return;
+    }
+
+    const newId = `REP-${400 + reports.length + Math.floor(Math.random() * 90)}`;
+    const now = new Date();
+    const dateStr = `${now.getDate()} ${now.toLocaleString('default', { month: 'short' })} ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+    
+    const newReportObj = {
+      id: newId,
+      reporter: newCaseForm.reporter,
+      phone: newCaseForm.phone,
+      crimeCategory: newCaseForm.crimeCategory,
+      detail: newCaseForm.detail,
+      location: geoResult.formattedAddress || newCaseForm.location,
+      coords: geoResult.coords,
+      date: dateStr,
+      status: newCaseForm.status,
+      priority: newCaseForm.priority
+    };
+
+    setReports([newReportObj, ...reports]);
+    showToast(`Case ${newId} registered! Google Maps pin placed at ${geoResult.formattedAddress || newCaseForm.location}.`);
+    setIsAddCaseOpen(false);
+    setLocationError(null);
+    setNewCaseForm({
+      reporter: '',
+      phone: '',
+      crimeCategory: 'Phishing-Vishing Fraud',
+      detail: '',
+      location: '',
+      status: 'OPEN',
+      priority: 'HIGH'
+    });
+  };
 
   // Live Incident Simulator States
   const [simStep, setSimStep] = useState<number>(0);
@@ -119,7 +431,7 @@ export default function App() {
     return () => clearInterval(timer);
   }, []);
 
-  const activeSessionDetails = sessions.find(s => s.id === activeSessionId) || sessions[0];
+  const activeSessionDetails: any = sessions.find(s => s.id === activeSessionId) || reports.find(r => r.id === activeSessionId) || sessions[0];
 
   const handleCurrencyUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -301,47 +613,80 @@ export default function App() {
                           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                         />
-                        {HOTSPOT_PINS.map((pin, i) => (
-                          <CircleMarker
-                            key={i}
-                            center={[pin.lat, pin.lng]}
-                            radius={8}
-                            fillColor={pin.score > 0.90 ? "#ef4444" : "#f59e0b"}
-                            color="#0f172a"
-                            weight={2}
-                            fillOpacity={0.85}
-                          >
-                            <Popup>
-                              <div className="text-slate-900 p-1 font-sans">
-                                <p className="font-bold text-xs">{pin.city} - {pin.type}</p>
-                                <p className="text-[10px] text-slate-600 mt-0.5">{pin.desc}</p>
-                                <p className="text-teal-600 font-bold text-[10px] mt-0.5">Threat Index: {(pin.score * 100).toFixed(0)}%</p>
-                              </div>
-                            </Popup>
-                          </CircleMarker>
-                        ))}
+                        {/* Map Pins dynamically generated from all registered cases and live hotspot pins */}
+                        {[
+                          ...HOTSPOT_PINS.map(p => ({
+                            id: p.city,
+                            title: p.desc,
+                            location: p.city,
+                            priority: p.priority || 'CRITICAL',
+                            status: 'OPEN',
+                            coords: { lat: p.lat, lng: p.lng }
+                          })),
+                          ...reports.map(r => ({
+                            id: r.id,
+                            title: `${r.crimeCategory || 'Cyber Crime'} - ${r.reporter}`,
+                            location: r.location,
+                            priority: r.priority || 'HIGH',
+                            status: r.status,
+                            coords: (r as any).coords || resolveCityCoords(r.location)
+                          }))
+                        ].map((pin, i) => {
+                          const isClosed = pin.status === 'CLOSED';
+                          const color = isClosed ? "#64748b" : 
+                            pin.priority === 'CRITICAL' ? "#ef4444" : 
+                            pin.priority === 'HIGH' ? "#f97316" : "#eab308";
+
+                          return (
+                            <CircleMarker
+                              key={`${pin.id}-${i}`}
+                              center={[(pin.coords as any).lat, (pin.coords as any).lng]}
+                              radius={isClosed ? 6 : 9}
+                              fillColor={color}
+                              color="#0f172a"
+                              weight={2}
+                              fillOpacity={isClosed ? 0.5 : 0.9}
+                            >
+                              <Popup>
+                                <div className="text-slate-900 p-1 font-sans">
+                                  <p className="font-bold text-xs">{pin.location} - {pin.id}</p>
+                                  <p className="text-[10px] text-slate-700 font-semibold mt-0.5">{pin.title}</p>
+                                  <div className="flex items-center gap-1.5 mt-1.5">
+                                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded text-white" style={{ backgroundColor: color }}>
+                                      {isClosed ? 'CLOSED' : `${pin.priority} SEVERITY`}
+                                    </span>
+                                  </div>
+                                </div>
+                              </Popup>
+                            </CircleMarker>
+                          );
+                        })}
                       </MapContainer>
                     </div>
-                    {/* Map Legend Overlay */}
+
+                    {/* 3-Color Map Severity Legend */}
                     <div className="absolute bottom-4 left-4 bg-slate-900/95 border border-slate-800 p-3 rounded-lg text-xs space-y-1 z-[1000]">
-                      <p className="font-bold text-white">Legend</p>
-                      <div className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-red-500"></span> Critical threat (Score &gt; 90)</div>
-                      <div className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Moderate threat (Score &lt; 90)</div>
+                      <p className="font-bold text-white text-[11px] uppercase tracking-wider mb-1">Threat Intensity Legend</p>
+                      <div className="flex items-center gap-2 text-slate-200"><span className="w-2.5 h-2.5 rounded-full bg-red-500"></span> 🔴 Critical Intensity (Urgent Intervention)</div>
+                      <div className="flex items-center gap-2 text-slate-200"><span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span> 🟠 High Intensity (Extortion / Mule Fraud)</div>
+                      <div className="flex items-center gap-2 text-slate-200"><span className="w-2.5 h-2.5 rounded-full bg-yellow-400"></span> 🟡 Moderate / Low Intensity (Monitored)</div>
+                      <div className="flex items-center gap-2 text-slate-400"><span className="w-2.5 h-2.5 rounded-full bg-slate-500"></span> ⚪ Closed Case Archive</div>
                     </div>
                   </div>
                 </div>
 
-                {/* RECENT ALERTS */}
+                {/* RECENT ALERTS & UNIFIED ACTIVE THREAT FEED */}
                 <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl shadow-lg flex flex-col justify-between">
                   <div>
                     <h4 className="font-semibold text-lg text-white mb-4 flex items-center gap-2">
                       <AlertTriangle className="w-5 h-5 text-red-500" />
-                      Critical Active Threats
+                      Critical Active Threat Feed
                     </h4>
                     
-                    <div className="space-y-4">
-                      {sessions.map((sess, idx) => (
-                        <div key={idx} className="border-l-4 border-red-500 bg-slate-850 p-4 rounded-r-lg space-y-2">
+                    <div className="space-y-4 max-h-[380px] overflow-y-auto pr-1">
+                      {/* Live VoIP Sessions */}
+                      {sessions.filter(s => s.status !== 'CLOSED').map((sess, idx) => (
+                        <div key={`sess-${idx}`} className="border-l-4 border-red-500 bg-slate-850 p-4 rounded-r-lg space-y-2">
                           <div className="flex justify-between items-start">
                             <span className="font-bold text-sm text-white">{sess.caller}</span>
                             <span className="bg-red-500/10 text-red-400 text-xs px-2 py-0.5 rounded font-bold">{(sess.risk * 100).toFixed(0)}% Threat</span>
@@ -350,6 +695,27 @@ export default function App() {
                           <div className="flex justify-between items-center text-xs mt-2 pt-2 border-t border-slate-800 text-slate-500">
                             <span>Status: <b className="text-red-400">{sess.status}</b></span>
                             <span>{sess.timestamp}</span>
+                          </div>
+                        </div>
+                      ))}
+
+                      {/* Active Citizen Reports */}
+                      {reports.filter(r => r.status !== 'CLOSED').map((rep) => (
+                        <div key={rep.id} className="border-l-4 border-amber-500 bg-slate-850 p-4 rounded-r-lg space-y-2">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <span className="font-bold text-sm text-teal-400">{rep.id}</span>
+                              <span className="text-xs text-slate-300 font-semibold ml-2">{rep.reporter}</span>
+                            </div>
+                            <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${rep.priority === 'CRITICAL' ? 'bg-red-500/10 text-red-400' : rep.priority === 'HIGH' ? 'bg-amber-500/10 text-amber-400' : 'bg-yellow-500/10 text-yellow-400'}`}>
+                              {rep.priority} SEVERITY
+                            </span>
+                          </div>
+                          <p className="text-xs font-bold text-slate-200">{rep.crimeCategory || 'Cybercrime'}</p>
+                          <p className="text-xs text-slate-400 line-clamp-2">{rep.detail}</p>
+                          <div className="flex justify-between items-center text-xs mt-2 pt-2 border-t border-slate-800 text-slate-500">
+                            <span>Status: <b className="text-amber-400">{rep.status}</b></span>
+                            <span>{rep.location}</span>
                           </div>
                         </div>
                       ))}
@@ -674,11 +1040,18 @@ export default function App() {
           {/* TAB 2: SCAM MONITOR */}
           {activeTab === 'scam' && (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* SESSIONS LIST */}
+              {/* SESSIONS & ACTIVE CASES LIST */}
               <div className="bg-slate-900 border border-slate-800 rounded-xl shadow-lg p-6 space-y-4">
-                <h4 className="font-bold text-lg text-white mb-4">Live Analysis Streams</h4>
-                <div className="space-y-3">
-                  {sessions.map((s) => (
+                <div className="flex justify-between items-center mb-2">
+                  <h4 className="font-bold text-lg text-white">Live Analysis Streams</h4>
+                  <span className="bg-emerald-500/10 text-emerald-400 text-[10px] font-bold px-2 py-0.5 rounded border border-emerald-500/30">
+                    Active Threats Only
+                  </span>
+                </div>
+                
+                <div className="space-y-3 max-h-[580px] overflow-y-auto pr-1">
+                  {/* Live VoIP Streams */}
+                  {sessions.filter(s => s.status !== 'CLOSED').map((s) => (
                     <div 
                       key={s.id} 
                       onClick={() => setActiveSessionId(s.id)}
@@ -697,59 +1070,145 @@ export default function App() {
                       </div>
                     </div>
                   ))}
+
+                  {/* Active Registered Citizen Cases */}
+                  {reports.filter(r => r.status !== 'CLOSED').map((rep) => (
+                    <div 
+                      key={rep.id} 
+                      onClick={() => setActiveSessionId(rep.id)}
+                      className={`p-4 rounded-lg cursor-pointer border transition-all ${rep.id === activeSessionId ? 'bg-teal-500/10 border-teal-400' : 'bg-slate-850 border-slate-800 hover:bg-slate-800'}`}
+                    >
+                      <div className="flex justify-between items-start">
+                        <span className="font-bold text-teal-400 text-sm">{rep.id} - {rep.reporter}</span>
+                        <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${rep.priority === 'CRITICAL' ? 'bg-red-500/10 text-red-400' : rep.priority === 'HIGH' ? 'bg-amber-500/10 text-amber-400' : 'bg-yellow-500/10 text-yellow-400'}`}>
+                          {rep.priority}
+                        </span>
+                      </div>
+                      <p className="text-xs font-bold text-slate-200 mt-1">{rep.crimeCategory || 'Cybercrime'}</p>
+                      <p className="text-xs text-slate-400 mt-1 line-clamp-1">{rep.detail}</p>
+                      <div className="flex justify-between items-center text-[10px] text-slate-500 mt-2">
+                        <span>{rep.location}</span>
+                        <span className="text-amber-400 font-bold">{rep.status}</span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
 
-              {/* DETAILS PANEL */}
+              {/* DETAILS & ACTION CONTROLS PANEL */}
               <div className="bg-slate-900 border border-slate-800 rounded-xl shadow-lg p-6 lg:col-span-2 space-y-6">
                 <div className="flex justify-between items-center border-b border-slate-800 pb-4">
                   <div>
-                    <h3 className="font-bold text-xl text-white">{activeSessionDetails.caller}</h3>
-                    <p className="text-xs text-slate-400 mt-1">Session ID: {activeSessionDetails.id} | Timestamp: {activeSessionDetails.timestamp}</p>
+                    <h3 className="font-bold text-xl text-white">{activeSessionDetails.caller || activeSessionDetails.reporter || activeSessionDetails.id}</h3>
+                    <p className="text-xs text-slate-400 mt-1">Ref ID: {activeSessionDetails.id} | Location: {activeSessionDetails.location || 'Cyber Cell'}</p>
                   </div>
-                  <div className="text-right">
+                  <div className="text-right flex items-center gap-2">
                     <span className="bg-red-500/10 text-red-400 text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider">
-                      {(activeSessionDetails.risk * 100).toFixed(0)}% Composite Risk
+                      {activeSessionDetails.priority || 'CRITICAL'} SEVERITY
                     </span>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="bg-slate-800 p-4 rounded-lg">
-                    <p className="text-slate-500 text-xs font-semibold uppercase">Target official</p>
-                    <p className="font-bold text-white mt-1">{activeSessionDetails.impersonating}</p>
+                    <p className="text-slate-500 text-xs font-semibold uppercase">Category / Impersonator</p>
+                    <p className="font-bold text-white mt-1">{activeSessionDetails.crimeCategory || activeSessionDetails.impersonating || 'VoIP Impersonation'}</p>
                   </div>
                   <div className="bg-slate-800 p-4 rounded-lg">
-                    <p className="text-slate-500 text-xs font-semibold uppercase">Action Directive</p>
-                    <p className="font-bold text-red-400 mt-1">{activeSessionDetails.status}</p>
+                    <p className="text-slate-500 text-xs font-semibold uppercase">Current Status</p>
+                    <p className="font-bold text-amber-400 mt-1">{activeSessionDetails.status}</p>
                   </div>
                   <div className="bg-slate-800 p-4 rounded-lg">
-                    <p className="text-slate-500 text-xs font-semibold uppercase">Mitigation Agent</p>
+                    <p className="text-slate-500 text-xs font-semibold uppercase">Active Defense Agent</p>
                     <p className="font-bold text-teal-400 mt-1">Orchestrator V7</p>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <h5 className="font-semibold text-white text-sm">Speech Transcript Stream (Updated live every 5s)</h5>
-                  <div className="bg-slate-955 p-4 rounded-lg border border-slate-800 h-44 overflow-y-auto text-sm leading-relaxed text-slate-300 font-mono">
-                    "{activeSessionDetails.transcript}"
+                  <h5 className="font-semibold text-white text-sm">Transcript & Case Intelligence Log</h5>
+                  <div className="bg-slate-955 p-4 rounded-lg border border-slate-800 h-40 overflow-y-auto text-sm leading-relaxed text-slate-300 font-mono">
+                    "{activeSessionDetails.transcript || activeSessionDetails.detail}"
                   </div>
                 </div>
 
-                {activeSessionDetails.risk > 0.75 && (
-                  <div className="border border-red-500/30 bg-red-500/5 p-4 rounded-lg flex items-center justify-between">
-                    <div>
-                      <p className="text-red-400 font-semibold text-sm">Intrusion Mitigation Initiated</p>
-                      <p className="text-slate-400 text-xs mt-1">UPI Apps locked, hold webhook issued to HDFC & ICICI bank networks.</p>
-                    </div>
+                {/* INTERACTIVE SCAM STATUS & CLOSING ACTION CONTROLS */}
+                <div className="bg-slate-850 p-4 rounded-xl border border-slate-800 space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+                      <Lock className="w-4 h-4 text-teal-400" />
+                      Live Scam Action Directives
+                    </span>
+                    <span className="text-[10px] text-slate-400">Updates sync to Citizen Inbox in real-time</span>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
                     <button 
-                      onClick={() => setActiveTab('evidence')}
-                      className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded text-xs transition-all"
+                      onClick={() => {
+                        if (activeSessionDetails.id.startsWith('REP-')) {
+                          handleUpdateReportStatus(activeSessionDetails.id, 'WARN_CITIZEN');
+                        } else {
+                          handleUpdateSessionStatus(activeSessionDetails.id, 'WARN_CITIZEN');
+                        }
+                      }}
+                      className="bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 border border-amber-500/40 text-xs font-bold px-3 py-2 rounded-lg transition-all cursor-pointer"
                     >
-                      Inspect Evidence Package
+                      ⚠️ Warn Citizen
+                    </button>
+
+                    <button 
+                      onClick={() => {
+                        if (activeSessionDetails.id.startsWith('REP-')) {
+                          handleUpdateReportStatus(activeSessionDetails.id, 'LOCK_BANK_APPS');
+                        } else {
+                          handleUpdateSessionStatus(activeSessionDetails.id, 'LOCK_BANK_APPS');
+                        }
+                      }}
+                      className="bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/40 text-xs font-bold px-3 py-2 rounded-lg transition-all cursor-pointer"
+                    >
+                      🔒 Lock Banking Apps
+                    </button>
+
+                    <button 
+                      onClick={() => {
+                        if (activeSessionDetails.id.startsWith('REP-')) {
+                          handleUpdateReportStatus(activeSessionDetails.id, 'INVESTIGATING');
+                        } else {
+                          handleUpdateSessionStatus(activeSessionDetails.id, 'INVESTIGATING');
+                        }
+                      }}
+                      className="bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 border border-blue-500/40 text-xs font-bold px-3 py-2 rounded-lg transition-all cursor-pointer"
+                    >
+                      🔍 Set Investigating
+                    </button>
+
+                    <button 
+                      onClick={() => {
+                        if (activeSessionDetails.id.startsWith('REP-')) {
+                          handleUpdateReportStatus(activeSessionDetails.id, 'RESOLVED');
+                        } else {
+                          handleUpdateSessionStatus(activeSessionDetails.id, 'RESOLVED');
+                        }
+                      }}
+                      className="bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/40 text-xs font-bold px-3 py-2 rounded-lg transition-all cursor-pointer"
+                    >
+                      ✅ Mark Resolved
+                    </button>
+
+                    <button 
+                      onClick={() => {
+                        if (activeSessionDetails.id.startsWith('REP-')) {
+                          handleUpdateReportStatus(activeSessionDetails.id, 'CLOSED');
+                        } else {
+                          handleUpdateSessionStatus(activeSessionDetails.id, 'CLOSED');
+                        }
+                      }}
+                      className="bg-red-600 hover:bg-red-700 text-white font-bold text-xs px-4 py-2 rounded-lg shadow-lg transition-all flex items-center gap-1.5 cursor-pointer ml-auto"
+                    >
+                      <XCircle className="w-4 h-4" />
+                      CLOSE CASE & ARCHIVE TO INBOX
                     </button>
                   </div>
-                )}
+                </div>
               </div>
             </div>
           )}
@@ -892,39 +1351,221 @@ export default function App() {
             </div>
           )}
 
-          {/* TAB 5: CITIZEN COMPLAINT INBOX */}
+          {/* TAB 5: CITIZEN COMPLAINT INBOX & CASE MANAGEMENT */}
           {activeTab === 'reports' && (
-            <div className="bg-slate-900 border border-slate-800 rounded-xl shadow-lg p-6 space-y-4">
-              <h4 className="font-bold text-lg text-white mb-4">Citizen Incident Inbox</h4>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="border-b border-slate-800 text-slate-400 text-xs font-semibold">
-                      <th className="py-3 px-4">Reporter ID</th>
-                      <th className="py-3 px-4">Name</th>
-                      <th className="py-3 px-4">Details</th>
-                      <th className="py-3 px-4">Location</th>
-                      <th className="py-3 px-4">Date</th>
-                      <th className="py-3 px-4">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="text-sm divide-y divide-slate-800">
-                    {INITIAL_REPORTS.map((rep) => (
-                      <tr key={rep.id} className="hover:bg-slate-800/40">
-                        <td className="py-3 px-4 font-mono font-bold text-teal-400">{rep.id}</td>
-                        <td className="py-3 px-4 font-semibold">{rep.reporter} <br/><span className="text-xs text-slate-500 font-normal">{rep.phone}</span></td>
-                        <td className="py-3 px-4 max-w-sm truncate">{rep.detail}</td>
-                        <td className="py-3 px-4">{rep.location}</td>
-                        <td className="py-3 px-4 text-xs text-slate-500">{rep.date}</td>
-                        <td className="py-3 px-4">
-                          <span className={`text-xs px-2 py-0.5 rounded font-medium ${rep.status === 'RESOLVED' ? 'bg-emerald-500/10 text-emerald-400' : rep.status === 'INVESTIGATING' ? 'bg-amber-500/10 text-amber-400' : 'bg-slate-700/50 text-slate-400'}`}>
-                            {rep.status}
-                          </span>
-                        </td>
+            <div className="space-y-6">
+              {/* ACTIVE CASES DESK */}
+              <div className="bg-slate-900 border border-slate-800 rounded-xl shadow-lg p-6 space-y-6">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-4 border-b border-slate-800">
+                  <div>
+                    <h4 className="font-bold text-xl text-white flex items-center gap-2">
+                      <FileText className="w-5 h-5 text-teal-400" />
+                      Citizen Incident Inbox & Active Cases Desk
+                    </h4>
+                    <p className="text-xs text-slate-400 mt-1">Register new cybercrime cases, update investigation status, and package digital evidence.</p>
+                  </div>
+
+                  <button 
+                    onClick={() => setIsAddCaseOpen(true)}
+                    className="flex items-center gap-2 bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-600 hover:to-emerald-700 text-white text-xs font-bold px-4 py-2.5 rounded-lg shadow-md transition-all cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Register / File New Case
+                  </button>
+                </div>
+
+                {/* TOOLBAR: SEARCH & STATUS FILTERS */}
+                <div className="flex flex-col md:flex-row gap-3 items-center justify-between bg-slate-850 p-3.5 rounded-lg border border-slate-800">
+                  <div className="relative w-full md:w-80">
+                    <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                    <input 
+                      type="text"
+                      placeholder="Search Case ID, Reporter, Category, Location..."
+                      value={reportSearch}
+                      onChange={(e) => setReportSearch(e.target.value)}
+                      className="w-full bg-slate-900 border border-slate-700 text-slate-200 pl-9 pr-3 py-1.5 rounded-md text-xs focus:outline-none focus:border-teal-500"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-2 w-full md:w-auto justify-end">
+                    <Filter className="w-4 h-4 text-slate-400" />
+                    <span className="text-xs text-slate-400 font-semibold">Filter Status:</span>
+                    <select 
+                      value={reportStatusFilter}
+                      onChange={(e) => setReportStatusFilter(e.target.value)}
+                      className="bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-md px-3 py-1.5 focus:outline-none focus:border-teal-500 cursor-pointer"
+                    >
+                      <option value="ALL">All Active Statuses ({reports.filter(r => r.status !== 'CLOSED').length})</option>
+                      <option value="OPEN">Open</option>
+                      <option value="INVESTIGATING">Investigating</option>
+                      <option value="EVIDENCE_PACKAGED">Evidence Packaged</option>
+                      <option value="RESOLVED">Resolved</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* ACTIVE CASE MANAGEMENT TABLE */}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-800 text-slate-400 text-xs font-semibold bg-slate-850/50">
+                        <th className="py-3 px-4">Case Ref</th>
+                        <th className="py-3 px-4">Complainant / Reporter</th>
+                        <th className="py-3 px-4">Crime Category & Details</th>
+                        <th className="py-3 px-4">Location</th>
+                        <th className="py-3 px-4">Date / Time</th>
+                        <th className="py-3 px-4">Status (Click to Update)</th>
+                        <th className="py-3 px-4 text-right">Actions</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="text-sm divide-y divide-slate-800">
+                      {reports
+                        .filter(rep => rep.status !== 'CLOSED')
+                        .filter(rep => {
+                          const matchesFilter = reportStatusFilter === 'ALL' || rep.status === reportStatusFilter;
+                          const matchesSearch = !reportSearch || 
+                            rep.id.toLowerCase().includes(reportSearch.toLowerCase()) ||
+                            rep.reporter.toLowerCase().includes(reportSearch.toLowerCase()) ||
+                            (rep.crimeCategory || '').toLowerCase().includes(reportSearch.toLowerCase()) ||
+                            rep.location.toLowerCase().includes(reportSearch.toLowerCase()) ||
+                            rep.detail.toLowerCase().includes(reportSearch.toLowerCase());
+                          return matchesFilter && matchesSearch;
+                        })
+                        .map((rep) => (
+                          <tr key={rep.id} className="hover:bg-slate-800/40 transition-colors">
+                            <td className="py-3 px-4 font-mono font-bold text-teal-400 flex items-center gap-1.5">
+                              <Shield className="w-3.5 h-3.5 text-teal-500" />
+                              {rep.id}
+                            </td>
+                            <td className="py-3 px-4 font-semibold">
+                              <span className="text-slate-100">{rep.reporter}</span>
+                              <br/>
+                              <span className="text-xs text-slate-400 font-mono font-normal">{rep.phone}</span>
+                            </td>
+                            <td className="py-3 px-4 max-w-sm">
+                              <span className="inline-block bg-teal-500/10 text-teal-400 border border-teal-500/30 text-[10px] font-bold px-2 py-0.5 rounded mb-1">
+                                {rep.crimeCategory || 'Phishing-Vishing Fraud'}
+                              </span>
+                              <p className="text-xs text-slate-300 line-clamp-2">{rep.detail}</p>
+                            </td>
+                            <td className="py-3 px-4 text-slate-300 text-xs flex items-center gap-1">
+                              <MapPin className="w-3 h-3 text-slate-500" />
+                              {rep.location}
+                            </td>
+                            <td className="py-3 px-4 text-xs text-slate-400 font-mono">{rep.date}</td>
+                            <td className="py-3 px-4">
+                              <select 
+                                value={rep.status}
+                                onChange={(e) => handleUpdateReportStatus(rep.id, e.target.value)}
+                                className={`text-xs font-bold px-2.5 py-1 rounded-lg border focus:outline-none cursor-pointer transition-all ${
+                                  rep.status === 'RESOLVED' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' :
+                                  rep.status === 'INVESTIGATING' ? 'bg-amber-500/10 text-amber-400 border-amber-500/30' :
+                                  rep.status === 'EVIDENCE_PACKAGED' ? 'bg-purple-500/10 text-purple-400 border-purple-500/30' :
+                                  rep.status === 'OPEN' ? 'bg-blue-500/10 text-blue-400 border-blue-500/30' :
+                                  'bg-slate-800 text-slate-400 border-slate-700'
+                                }`}
+                              >
+                                <option value="OPEN" className="bg-slate-900 text-blue-400">● OPEN</option>
+                                <option value="INVESTIGATING" className="bg-slate-900 text-amber-400">● INVESTIGATING</option>
+                                <option value="EVIDENCE_PACKAGED" className="bg-slate-900 text-purple-400">● EVIDENCE PACKAGED</option>
+                                <option value="RESOLVED" className="bg-slate-900 text-emerald-400">● RESOLVED</option>
+                                <option value="CLOSED" className="bg-slate-900 text-red-400">✖ CLOSE CASE</option>
+                              </select>
+                            </td>
+                            <td className="py-3 px-4 text-right">
+                              <button 
+                                onClick={() => setActiveTab('evidence')}
+                                className="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 px-2.5 py-1 rounded-md transition-colors cursor-pointer"
+                              >
+                                View DEP Evidence
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* COLLAPSABLE SUBDIVISION: CLOSED CASES */}
+              <div className="border border-slate-800 rounded-xl bg-slate-900 shadow-lg overflow-hidden">
+                <button 
+                  onClick={() => setShowClosedCases(!showClosedCases)}
+                  className="w-full flex justify-between items-center px-6 py-4 bg-slate-850 hover:bg-slate-800 transition-colors cursor-pointer border-b border-slate-800"
+                >
+                  <div className="flex items-center gap-3">
+                    <FolderCheck className="w-5 h-5 text-slate-400" />
+                    <h5 className="font-bold text-white text-base">Closed cases</h5>
+                    <span className="bg-slate-800 text-slate-400 border border-slate-700 text-xs px-2.5 py-0.5 rounded-full font-bold">
+                      {reports.filter(r => r.status === 'CLOSED').length} Closed
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 text-slate-400 text-xs font-semibold">
+                    <span>{showClosedCases ? 'Collapse Section' : 'Expand Section'}</span>
+                    {showClosedCases ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                  </div>
+                </button>
+                
+                {showClosedCases && (
+                  <div className="p-6">
+                    {reports.filter(r => r.status === 'CLOSED').length === 0 ? (
+                      <div className="py-8 text-center text-slate-500 text-xs italic">
+                        No closed cases in the archive yet. Cases closed from Scam Monitor or Citizen Inbox will automatically appear here.
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                          <thead>
+                            <tr className="border-b border-slate-800 text-slate-500 text-xs font-semibold">
+                              <th className="py-3 px-4">Case Ref</th>
+                              <th className="py-3 px-4">Complainant / Phone</th>
+                              <th className="py-3 px-4">Crime Category & Summary</th>
+                              <th className="py-3 px-4">Location</th>
+                              <th className="py-3 px-4">Date</th>
+                              <th className="py-3 px-4">Status</th>
+                              <th className="py-3 px-4 text-right">Reopen</th>
+                            </tr>
+                          </thead>
+                          <tbody className="text-sm divide-y divide-slate-800/60 opacity-80">
+                            {reports
+                              .filter(r => r.status === 'CLOSED')
+                              .map((rep) => (
+                                <tr key={rep.id} className="hover:bg-slate-800/30 transition-colors">
+                                  <td className="py-3 px-4 font-mono font-bold text-slate-400">{rep.id}</td>
+                                  <td className="py-3 px-4">
+                                    <span className="text-slate-300 font-semibold">{rep.reporter}</span>
+                                    <br/>
+                                    <span className="text-xs text-slate-500 font-mono">{rep.phone}</span>
+                                  </td>
+                                  <td className="py-3 px-4 max-w-sm">
+                                    <span className="inline-block bg-slate-800 text-slate-400 text-[10px] font-bold px-2 py-0.5 rounded mb-1">
+                                      {rep.crimeCategory || 'Cybercrime'}
+                                    </span>
+                                    <p className="text-xs text-slate-400 line-clamp-1">{rep.detail}</p>
+                                  </td>
+                                  <td className="py-3 px-4 text-xs text-slate-400">{rep.location}</td>
+                                  <td className="py-3 px-4 text-xs text-slate-500 font-mono">{rep.date}</td>
+                                  <td className="py-3 px-4">
+                                    <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-slate-800 text-slate-400 border border-slate-700">
+                                      CLOSED
+                                    </span>
+                                  </td>
+                                  <td className="py-3 px-4 text-right">
+                                    <button 
+                                      onClick={() => handleUpdateReportStatus(rep.id, 'OPEN')}
+                                      className="text-xs bg-slate-800 hover:bg-slate-750 text-teal-400 border border-slate-700 px-2.5 py-1 rounded-md transition-colors cursor-pointer"
+                                    >
+                                      Reopen Case
+                                    </button>
+                                  </td>
+                                </tr>
+                              ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -1109,6 +1750,162 @@ export default function App() {
         </div>
 
       </main>
+
+      {/* GLOBAL TOAST NOTIFICATION */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 bg-slate-900 border border-teal-500/50 text-white text-xs font-bold px-4 py-3 rounded-xl shadow-2xl animate-bounce">
+          <CheckCircle2 className="w-5 h-5 text-teal-400" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
+
+      {/* REGISTER NEW CASE MODAL DIALOG */}
+      {isAddCaseOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+          <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl animate-in fade-in duration-200">
+            <div className="flex justify-between items-center bg-slate-850 px-6 py-4 border-b border-slate-800">
+              <div className="flex items-center gap-2">
+                <Shield className="w-5 h-5 text-teal-400" />
+                <h3 className="font-bold text-white text-base">Register New Case / Incident Report</h3>
+              </div>
+              <button 
+                onClick={() => setIsAddCaseOpen(false)}
+                className="text-slate-400 hover:text-white transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateCase} className="p-6 space-y-4 text-xs">
+              {locationError && (
+                <div className="bg-red-500/15 border border-red-500/50 p-3 rounded-lg flex items-start gap-2.5 text-xs text-red-300 animate-in fade-in">
+                  <AlertTriangle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-bold text-red-400">Location Unrecognized</p>
+                    <p className="text-[11px] text-red-300/90 mt-0.5">{locationError}</p>
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1">Cyber Crime Category *</label>
+                <select 
+                  value={newCaseForm.crimeCategory}
+                  onChange={(e) => setNewCaseForm({ ...newCaseForm, crimeCategory: e.target.value })}
+                  className="w-full bg-slate-800 border border-slate-700 text-teal-400 font-bold rounded-lg p-2.5 focus:outline-none focus:border-teal-500 cursor-pointer"
+                >
+                  {CYBER_CRIME_CATEGORIES.map((cat, idx) => (
+                    <option key={idx} value={cat} className="bg-slate-900 text-white">
+                      ● {cat}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1">Complainant / Reporter Name *</label>
+                <input 
+                  type="text"
+                  required
+                  placeholder="e.g. Inspector Ramesh Kumar / Citizen Name"
+                  value={newCaseForm.reporter}
+                  onChange={(e) => setNewCaseForm({ ...newCaseForm, reporter: e.target.value })}
+                  className="w-full bg-slate-800 border border-slate-700 text-white rounded-lg p-2.5 focus:outline-none focus:border-teal-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Phone Number *</label>
+                  <input 
+                    type="text"
+                    required
+                    placeholder="+91 98765 43210"
+                    value={newCaseForm.phone}
+                    onChange={(e) => setNewCaseForm({ ...newCaseForm, phone: e.target.value })}
+                    className="w-full bg-slate-800 border border-slate-700 text-white rounded-lg p-2.5 focus:outline-none focus:border-teal-500 font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Location / District</label>
+                  <input 
+                    type="text"
+                    placeholder="e.g. Pune, Bandra Mumbai, Connaught Place Delhi"
+                    value={newCaseForm.location}
+                    onChange={(e) => setNewCaseForm({ ...newCaseForm, location: e.target.value })}
+                    className="w-full bg-slate-800 border border-slate-700 text-white rounded-lg p-2.5 focus:outline-none focus:border-teal-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Initial Status</label>
+                  <select 
+                    value={newCaseForm.status}
+                    onChange={(e) => setNewCaseForm({ ...newCaseForm, status: e.target.value })}
+                    className="w-full bg-slate-800 border border-slate-700 text-white rounded-lg p-2.5 focus:outline-none focus:border-teal-500 cursor-pointer"
+                  >
+                    <option value="OPEN">OPEN</option>
+                    <option value="INVESTIGATING">INVESTIGATING</option>
+                    <option value="EVIDENCE_PACKAGED">EVIDENCE PACKAGED</option>
+                    <option value="RESOLVED">RESOLVED</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Priority Level (Map Severity)</label>
+                  <select 
+                    value={newCaseForm.priority}
+                    onChange={(e) => setNewCaseForm({ ...newCaseForm, priority: e.target.value })}
+                    className="w-full bg-slate-800 border border-slate-700 text-white rounded-lg p-2.5 focus:outline-none focus:border-teal-500 cursor-pointer font-bold"
+                  >
+                    <option value="CRITICAL" className="text-red-400 font-bold">🔴 CRITICAL SEVERITY (Red Pin)</option>
+                    <option value="HIGH" className="text-amber-400 font-bold">🟠 HIGH SEVERITY (Orange Pin)</option>
+                    <option value="MEDIUM" className="text-yellow-400 font-bold">🟡 MEDIUM / LOW SEVERITY (Yellow Pin)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1">Incident Detail & Modus Operandi *</label>
+                <textarea 
+                  required
+                  rows={3}
+                  placeholder="Describe the cyber arrest call, extortion attempt, counterfeit note serials, or fraudulent UPI handle..."
+                  value={newCaseForm.detail}
+                  onChange={(e) => setNewCaseForm({ ...newCaseForm, detail: e.target.value })}
+                  className="w-full bg-slate-800 border border-slate-700 text-white rounded-lg p-2.5 focus:outline-none focus:border-teal-500"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
+                <button 
+                  type="button"
+                  onClick={() => setIsAddCaseOpen(false)}
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg font-semibold transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  disabled={isValidatingLocation}
+                  className="px-5 py-2 bg-teal-500 hover:bg-teal-600 disabled:opacity-50 text-white rounded-lg font-bold shadow-md transition-colors cursor-pointer flex items-center gap-2"
+                >
+                  {isValidatingLocation ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      Verifying Google Maps Location...
+                    </>
+                  ) : (
+                    "File & Register Case"
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
     </div>
   );
