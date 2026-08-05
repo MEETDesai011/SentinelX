@@ -1,0 +1,17 @@
+node_modules/
+*/node_modules/
+*/*/node_modules/
+.expo/
+*/.expo/
+*/*/.expo/
+.gradle/
+*/.gradle/
+*/*/.gradle/
+build/
+*/build/
+*/*/build/
+dist/
+*/dist/
+*/*/dist/
+.env
+.DS_Store

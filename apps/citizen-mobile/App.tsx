@@ -61,8 +61,8 @@ export default function App() {
 
       {/* HEADER SECTION */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>SENTINELX CITIZEN SHIELD</p>
-        <Text style={styles.headerSubtitle}>Proactive Digital Defense</p>
+        <Text style={styles.headerTitle}>SENTINELX CITIZEN SHIELD</Text>
+        <Text style={styles.headerSubtitle}>Proactive Digital Defense</Text>
       </View>
 
       {/* ACTIVE SCREEN RENDER */}
@@ -75,21 +75,21 @@ export default function App() {
               <View style={styles.statusDotRing}>
                 <View style={styles.statusDotActive} />
               </View>
-              <Text style={styles.shieldStatusTitle}>Active Signal Protection</p>
-              <Text style={styles.shieldStatusDesc}>Your device is protected against virtual number spoofing and deepfake voice calls.</p>
+              <Text style={styles.shieldStatusTitle}>Active Signal Protection</Text>
+              <Text style={styles.shieldStatusDesc}>Your device is protected against virtual number spoofing and deepfake voice calls.</Text>
             </View>
 
             <View style={styles.actionCard}>
-              <Text style={styles.cardHeader}>Verify Official Caller Identity</p>
-              <Text style={styles.cardDesc}>Did someone call you claiming to be a CBI officer, customs department, or police commander?</p>
+              <Text style={styles.cardHeader}>Verify Official Caller Identity</Text>
+              <Text style={styles.cardDesc}>Did someone call you claiming to be a CBI officer, customs department, or police commander?</Text>
               <TouchableOpacity style={styles.primaryButton} onPress={() => setActiveScreen('report')}>
-                <Text style={styles.buttonText}>Verify Authority Identity</p>
+                <Text style={styles.buttonText}>Verify Authority Identity</Text>
               </TouchableOpacity>
             </View>
 
             <View style={styles.threatLockNotice}>
-              <Text style={styles.lockNoticeHeader}>🔒 Auto-Lock Prevention</p>
-              <Text style={styles.lockNoticeDesc}>SentinelX will temporarily restrict access to UPI and banking applications on this device during verified digital arrest calls to prevent financial coercion.</p>
+              <Text style={styles.lockNoticeHeader}>🔒 Auto-Lock Prevention</Text>
+              <Text style={styles.lockNoticeDesc}>SentinelX will temporarily restrict access to UPI and banking applications on this device during verified digital arrest calls to prevent financial coercion.</Text>
             </View>
           </ScrollView>
         )}
@@ -97,17 +97,17 @@ export default function App() {
         {/* SCREEN 2: CURRENCY SCANNER */}
         {activeScreen === 'scan' && (
           <ScrollView contentContainerStyle={styles.scrollContent}>
-            <Text style={styles.screenHeader}>Currency Note Scanner (Pillar 2)</p>
-            <Text style={styles.screenDesc}>Position the banknote inside the viewport to analyze the color-shifting thread, watermark depth, and microprinting density.</p>
+            <Text style={styles.screenHeader}>Currency Note Scanner (Pillar 2)</Text>
+            <Text style={styles.screenDesc}>Position the banknote inside the viewport to analyze the color-shifting thread, watermark depth, and microprinting density.</Text>
 
             <View style={styles.cameraViewportMock}>
               {scanning ? (
                 <View style={styles.scanningOverlay}>
                   <ActivityIndicator size="large" color="#008080" />
-                  <Text style={styles.scanText}>Preprocessing Canny edge thresholds...</p>
+                  <Text style={styles.scanText}>Preprocessing Canny edge thresholds...</Text>
                 </View>
               ) : (
-                <Text style={styles.cameraText}>Camera Viewport View Mockup</p>
+                <Text style={styles.cameraText}>Camera Viewport View Mockup</Text>
               )}
             </View>
 
@@ -117,14 +117,14 @@ export default function App() {
 
             {scanResult && (
               <View style={styles.resultCard}>
-                <Text style={styles.resultTitle}>⚠️ Counterfeit Note Detected</p>
-                <Text style={styles.resultSub}>Confidence Index: {(scanResult.confidence * 100).toFixed(0)}%</p>
+                <Text style={styles.resultTitle}>⚠️ Counterfeit Note Detected</Text>
+                <Text style={styles.resultSub}>Confidence Index: {(scanResult.confidence * 100).toFixed(0)}%</Text>
                 <Text style={styles.serialText}>Serial Extracted: {scanResult.serialNumber}</Text>
                 
                 <View style={styles.failedBlock}>
                   <Text style={styles.failedBlockHeader}>Failed Indicators:</Text>
                   {scanResult.failedIndicators.map((ind: string, idx: number) => (
-                    <Text key={idx} style={styles.failedText}>• {ind}</p>
+                    <Text key={idx} style={styles.failedText}>• {ind}</Text>
                   ))}
                 </View>
               </View>
@@ -135,7 +135,7 @@ export default function App() {
         {/* SCREEN 3: REPORT COMPLAINT */}
         {activeScreen === 'report' && (
           <ScrollView contentContainerStyle={styles.scrollContent}>
-            <Text style={styles.screenHeader}>Report Scam Attempt</p>
+            <Text style={styles.screenHeader}>Report Scam Attempt</Text>
             <Text style={styles.screenDesc}>Log suspicious WhatsApp calls, digital arrest threats, or fraudulent payment demands directly to the cyber crime division.</Text>
 
             <View style={styles.formGroup}>
@@ -187,18 +187,18 @@ export default function App() {
         {/* SCREEN 4: ALERTS FEED */}
         {activeScreen === 'alerts' && (
           <ScrollView contentContainerStyle={styles.scrollContent}>
-            <Text style={styles.screenHeader}>Regional Scam Alerts</p>
-            <Text style={styles.screenDesc}>Live alerts of active fraud campaigns reported near your geographic sector.</p>
+            <Text style={styles.screenHeader}>Regional Scam Alerts</Text>
+            <Text style={styles.screenDesc}>Live alerts of active fraud campaigns reported near your geographic sector.</Text>
 
             <View style={styles.alertItem}>
-              <Text style={styles.alertHeader}>🚨 FedEx Drug Parcel Scam Call Activity</p>
-              <Text style={styles.alertBody}>High frequency of calls impersonating Customs officers demanding KYC/money verification transfers reported in your district.</p>
+              <Text style={styles.alertHeader}>🚨 FedEx Drug Parcel Scam Call Activity</Text>
+              <Text style={styles.alertBody}>High frequency of calls impersonating Customs officers demanding KYC/money verification transfers reported in your district.</Text>
               <Text style={styles.alertTime}>Reported: 10 mins ago</Text>
             </View>
 
             <View style={styles.alertItem}>
-              <Text style={styles.alertHeader}>⚠️ Counterfeit ₹500 Notes Circulating</p>
-              <Text style={styles.alertBody}>Detections reported by multiple local merchant retail outlets. Verify threads and watermarks using the Currency Scan tab.</p>
+              <Text style={styles.alertHeader}>⚠️ Counterfeit ₹500 Notes Circulating</Text>
+              <Text style={styles.alertBody}>Detections reported by multiple local merchant retail outlets. Verify threads and watermarks using the Currency Scan tab.</Text>
               <Text style={styles.alertTime}>Reported: 2 hours ago</Text>
             </View>
           </ScrollView>

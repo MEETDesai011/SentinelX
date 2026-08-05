@@ -1,0 +1,16 @@
+{
+  "expo": {
+    "name": "SentinelX Citizen Mobile",
+    "slug": "sentinelx-citizen-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.sentinelx.citizenmobile"
+    },
+    "android": {
+      "package": "com.sentinelx.citizenmobile"
+    }
+  }
+}
