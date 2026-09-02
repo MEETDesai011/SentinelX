@@ -10,7 +10,8 @@
     "typecheck": "npm --prefix apps/command-centre run build"
   },
   "devDependencies": {
-    "prisma": "^6.19.3"
+    "prisma": "^6.19.3",
+    "typescript": "^7.0.2"
   },
   "dependencies": {
     "@prisma/client": "^7.8.0"
