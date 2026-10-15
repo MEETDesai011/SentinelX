@@ -58,19 +58,39 @@ class TestCounterfeitDetectionService(unittest.TestCase):
         self.assertIn("Counterfeit note detected", data["brief_reason"])
 
     def test_model_info_endpoint(self):
-        """Verify ~200 images dataset training info"""
+        """Verify multi-denomination dataset training info and accuracy >= 91%"""
         response = self.client.get("/currency/model-info")
         self.assertEqual(response.status_code, 200)
         data = response.json()
-        self.assertEqual(data["training_dataset_size"], 200)
-        self.assertEqual(data["model_metrics"]["accuracy"], 0.975)
+        self.assertGreaterEqual(data["validation_accuracy"], 0.91)
+        self.assertTrue(data["meets_minimum_accuracy_requirement"])
+        self.assertIn("₹10", data["dataset_breakdown"]["denominations"])
         self.assertIn("₹500", data["dataset_breakdown"]["denominations"])
 
     def test_health(self):
         response = self.client.get("/health")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["status"], "UP")
-        self.assertEqual(response.json()["training_dataset_size"], 200)
+
+    def test_ten_rupee_note_endpoint(self):
+        """Verify that uploading a ₹10 note detects denomination as 10 (not 500) and genuine"""
+        import os
+        ten_path = os.path.join(os.path.dirname(__file__), "Data", "Validation", "10", "10_val_1.jpg")
+        if os.path.exists(ten_path):
+            with open(ten_path, "rb") as f:
+                img_b64 = base64.b64encode(f.read()).decode('utf-8')
+            
+            # Send with default claimed_denomination = 500 to simulate frontend upload before correction
+            payload = {
+                "image_base64": img_b64,
+                "claimed_denomination": 500
+            }
+            response = self.client.post("/currency/detect", json=payload)
+            self.assertEqual(response.status_code, 200)
+            data = response.json()
+            self.assertEqual(data["detected_denomination"], 10)
+            self.assertEqual(data["classification"], "GENUINE")
+            self.assertFalse(data["is_counterfeit"])
 
 if __name__ == '__main__':
     unittest.main()
