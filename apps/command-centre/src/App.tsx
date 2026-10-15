@@ -808,55 +808,68 @@ export default function App() {
     const data = imgData.data;
 
     let totalR = 0, totalG = 0, totalB = 0;
-    let totalHue = 0, totalSat = 0;
+    let totalSat = 0;
     const pixelCount = w * h;
 
-    // 8 distinct currency color bins
-    const hueBins = new Array(8).fill(0); // 0: Brown (10), 1: Bright Yellow (200), 2: Greenish Yellow (20), 3: Cyan/Blue (50), 4: Lavender (100), 5: Magenta (2000), 6: Grey (500), 7: Other
+    // Center-focus crop (inner 70% zone) to exclude background surface/table
+    const cropX1 = Math.floor(w * 0.15);
+    const cropX2 = Math.floor(w * 0.85);
+    const cropY1 = Math.floor(h * 0.15);
+    const cropY2 = Math.floor(h * 0.85);
 
-    for (let i = 0; i < data.length; i += 4) {
-      const r = data[i] / 255;
-      const g = data[i + 1] / 255;
-      const b = data[i + 2] / 255;
+    let votes10 = 0;
+    let votes20 = 0;
+    let votes50 = 0;
+    let votes100 = 0;
+    let votes200 = 0;
+    let votes500 = 0;
+    let votes2000 = 0;
 
-      totalR += r;
-      totalG += g;
-      totalB += b;
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const i = (y * w + x) * 4;
+        const r = data[i] / 255;
+        const g = data[i + 1] / 255;
+        const b = data[i + 2] / 255;
 
-      const max = Math.max(r, g, b);
-      const min = Math.min(r, g, b);
-      const delta = max - min;
+        totalR += r;
+        totalG += g;
+        totalB += b;
 
-      let hVal = 0;
-      if (delta > 0.0001) {
-        if (max === r) hVal = ((g - b) / delta) % 6;
-        else if (max === g) hVal = (b - r) / delta + 2;
-        else hVal = (r - g) / delta + 4;
-        hVal = Math.round(hVal * 60);
-        if (hVal < 0) hVal += 360;
-      }
+        const max = Math.max(r, g, b);
+        const min = Math.min(r, g, b);
+        const delta = max - min;
 
-      const sVal = max === 0 ? 0 : delta / max;
+        let hVal = 0;
+        if (delta > 0.0001) {
+          if (max === r) hVal = ((g - b) / delta) % 6;
+          else if (max === g) hVal = (b - r) / delta + 2;
+          else hVal = (r - g) / delta + 4;
+          hVal = Math.round(hVal * 60);
+          if (hVal < 0) hVal += 360;
+        }
 
-      totalHue += hVal;
-      totalSat += sVal;
+        const sVal = max === 0 ? 0 : delta / max;
+        totalSat += sVal;
 
-      if (sVal < 0.16) {
-        hueBins[6]++; // Grey / Stone Grey (₹500)
-      } else if (hVal >= 10 && hVal < 35) {
-        hueBins[0]++; // Brown / Orange (₹10)
-      } else if (hVal >= 35 && hVal < 55) {
-        hueBins[1]++; // Bright Yellow (₹200)
-      } else if (hVal >= 55 && hVal < 90) {
-        hueBins[2]++; // Greenish Yellow (₹20)
-      } else if (hVal >= 170 && hVal < 220) {
-        hueBins[3]++; // Fluorescent Blue / Cyan (₹50)
-      } else if (hVal >= 220 && hVal < 280) {
-        hueBins[4]++; // Lavender / Purple (₹100)
-      } else if (hVal >= 290 && hVal < 345) {
-        hueBins[5]++; // Magenta / Deep Pink (₹2000)
-      } else {
-        hueBins[7]++;
+        // Classify colored pixels within the central banknote substrate
+        if (x >= cropX1 && x <= cropX2 && y >= cropY1 && y <= cropY2) {
+          if (sVal < 0.15 && Math.abs(r - g) < 0.07 && Math.abs(g - b) < 0.07) {
+            votes500++; // Stone Grey (₹500)
+          } else if ((hVal >= 210 && hVal <= 280) || (b > g + 0.04 && r > g + 0.02)) {
+            votes100++; // Lavender / Purple (₹100)
+          } else if (hVal >= 170 && hVal < 210 && (g > r + 0.02 || b > r + 0.03)) {
+            votes50++; // Fluorescent Blue / Cyan (₹50)
+          } else if (hVal >= 285 && hVal <= 355) {
+            votes2000++; // Magenta (₹2000)
+          } else if (hVal >= 35 && hVal < 52 && r > 0.55 && g > 0.45) {
+            votes200++; // Bright Orange-Yellow (₹200)
+          } else if (hVal >= 52 && hVal < 90 && g >= r) {
+            votes20++; // Greenish Yellow (₹20)
+          } else if ((hVal >= 10 && hVal < 35) || (r > g + 0.05 && g > b + 0.03)) {
+            votes10++; // Chocolate Brown (₹10)
+          }
+        }
       }
     }
 
@@ -864,7 +877,6 @@ export default function App() {
     const avgG = totalG / pixelCount;
     const avgB = totalB / pixelCount;
     const avgSat = totalSat / pixelCount;
-    const avgHue = totalHue / pixelCount;
 
     // Edge density via horizontal/vertical gradients
     let edgeSum = 0;
@@ -910,47 +922,23 @@ export default function App() {
       computedThreadVariance = Math.sqrt(threadHueValues.reduce((a, b) => a + Math.pow(b - meanTh, 2), 0) / threadHueValues.length);
     }
 
-    // Denomination Classification
-    const maxBinIdx = hueBins.indexOf(Math.max(...hueBins));
-    const isGrey = avgSat < 0.22 && Math.abs(avgR - avgG) < 0.08 && Math.abs(avgG - avgB) < 0.08;
+    // Rank candidates by center-focus chromatic voting
+    const candidates = [
+      { denom: 100, votes: votes100, label: "₹100 Banknote (Lavender Series)" },
+      { denom: 50, votes: votes50, label: "₹50 Banknote (Fluorescent Blue Series)" },
+      { denom: 10, votes: votes10, label: "₹10 Banknote (Chocolate Brown Series)" },
+      { denom: 200, votes: votes200, label: "₹200 Banknote (Bright Yellow Series)" },
+      { denom: 20, votes: votes20, label: "₹20 Banknote (Greenish Yellow Series)" },
+      { denom: 2000, votes: votes2000, label: "₹2000 Banknote (Magenta Series)" },
+      { denom: 500, votes: votes500, label: "₹500 Banknote (Stone Grey Series)" },
+    ];
+    candidates.sort((a, b) => b.votes - a.votes);
 
-    let detectedDenom = 500;
-    let denomLabel = "₹500 Banknote (Stone Grey Series)";
+    // Stone Grey check (low saturation across entire note)
+    const isGrey = avgSat < 0.18 && Math.abs(avgR - avgG) < 0.06 && Math.abs(avgG - avgB) < 0.06;
+    let detectedDenom = isGrey ? 500 : candidates[0].denom;
+    let denomLabel = isGrey ? "₹500 Banknote (Mahatma Gandhi New Series)" : candidates[0].label;
     let conf = 0.95;
-
-    if (isGrey) {
-      detectedDenom = 500;
-      denomLabel = "₹500 Banknote (Mahatma Gandhi New Series)";
-      conf = 0.96;
-    } else if (maxBinIdx === 0 || (avgHue >= 10 && avgHue < 35) || (avgR > avgG && avgG > avgB && avgSat > 0.18)) {
-      detectedDenom = 10;
-      denomLabel = "₹10 Banknote (Chocolate Brown Series)";
-      conf = 0.94;
-    } else if (maxBinIdx === 5 || (avgHue >= 285 && avgHue <= 345)) {
-      detectedDenom = 2000;
-      denomLabel = "₹2000 Banknote (Magenta Series)";
-      conf = 0.97;
-    } else if (maxBinIdx === 3 || (avgHue >= 170 && avgHue < 220)) {
-      detectedDenom = 50;
-      denomLabel = "₹50 Banknote (Fluorescent Blue Series)";
-      conf = 0.95;
-    } else if (maxBinIdx === 4 || (avgHue >= 220 && avgHue < 280)) {
-      detectedDenom = 100;
-      denomLabel = "₹100 Banknote (Lavender Series)";
-      conf = 0.95;
-    } else if (maxBinIdx === 2 || (avgHue >= 55 && avgHue < 90)) {
-      detectedDenom = 20;
-      denomLabel = "₹20 Banknote (Greenish Yellow Series)";
-      conf = 0.93;
-    } else if (maxBinIdx === 1 || (avgHue >= 35 && avgHue < 55)) {
-      detectedDenom = 200;
-      denomLabel = "₹200 Banknote (Bright Yellow Series)";
-      conf = 0.95;
-    } else if (avgR > avgG && avgR > avgB) {
-      detectedDenom = 10;
-      denomLabel = "₹10 Banknote (Mahatma Gandhi Series)";
-      conf = 0.91;
-    }
 
     // Watermark contrast based on denomination geometry (left for ₹10/₹20, right for others)
     const wmStartX = Math.floor(w * (detectedDenom <= 20 ? 0.06 : 0.65));

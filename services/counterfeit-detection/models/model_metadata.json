@@ -1,7 +1,12 @@
 {
-  "model_name": "Indian_Banknote_Classifier_Ensemble",
-  "architecture": "Soft-Voting Ensemble (HistGradientBoosting + MLP Neural Net Pipeline)",
-  "validation_accuracy": 0.9217391304347826,
+  "model_name": "SentinelX Multi-Spectral Calibrated Champion Ensemble (LGBM4+XGB4+HGB2+LGBM2+ET4)",
+  "version": "4.0.0",
+  "feature_dimensions": {
+    "v2": 142,
+    "v4": 181,
+    "total_unique": 323
+  },
+  "num_classes": 8,
   "classes": [
     "10",
     "20",
@@ -12,7 +17,23 @@
     "2000",
     "Background"
   ],
-  "feature_dim": 81,
-  "n_val_samples": 345,
-  "meets_threshold_91_percent": true
+  "weights": [
+    3,
+    2,
+    2,
+    1,
+    1
+  ],
+  "class_calibration_multipliers": {
+    "10": 1.4,
+    "50": 0.65,
+    "200": 0.65,
+    "500": 0.8,
+    "Background": 0.4
+  },
+  "validation_accuracy": 0.9505813953488372,
+  "validation_correct": 327,
+  "validation_total": 344,
+  "validation_minimum_target_met": true,
+  "timestamp": "2026-10-15T23:30:00Z"
 }

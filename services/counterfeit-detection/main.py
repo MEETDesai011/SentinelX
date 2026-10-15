@@ -62,10 +62,24 @@ CLF_MODEL = None
 GENUINE_PROFILES = None
 
 try:
+    from model_engine import ProductionEnsemble, extract_v2_features, extract_v4_features
+except ImportError:
+    try:
+        from .model_engine import ProductionEnsemble, extract_v2_features, extract_v4_features
+    except Exception:
+        ProductionEnsemble = None
+        extract_v2_features = None
+        extract_v4_features = None
+
+try:
     clf_path = os.path.join(MODEL_DIR, "inr_denomination_classifier.joblib")
     if joblib is not None and os.path.exists(clf_path):
-        CLF_MODEL = joblib.load(clf_path)
-        logger.info(f"Loaded ML Denomination Classifier from: {clf_path}")
+        raw_bundle = joblib.load(clf_path)
+        if isinstance(raw_bundle, dict) and ProductionEnsemble is not None:
+            CLF_MODEL = ProductionEnsemble(raw_bundle)
+        else:
+            CLF_MODEL = raw_bundle
+        logger.info(f"Loaded ML Denomination Champion Ensemble from: {clf_path}")
     
     profiles_path = os.path.join(MODEL_DIR, "genuine_security_profiles.json")
     if os.path.exists(profiles_path):
@@ -76,76 +90,10 @@ except Exception as e:
     logger.warning(f"Could not load pre-trained ML models: {e}")
 
 def extract_pil_features(pil_img):
-    """Extracts high-fidelity feature vector matching trained classifier."""
-    try:
-        img_rgb = pil_img.convert('RGB')
-        w, h = img_rgb.size
-        aspect_ratio = w / float(h) if h > 0 else 1.0
-        
-        img_resized = img_rgb.resize((128, 64), Image.Resampling.BILINEAR)
-        np_img = np.array(img_resized, dtype=np.float32) / 255.0
-        
-        mean_rgb = np.mean(np_img, axis=(0, 1))
-        std_rgb = np.std(np_img, axis=(0, 1))
-        
-        hsv_img = img_resized.convert('HSV')
-        np_hsv = np.array(hsv_img, dtype=np.float32) / 255.0
-        mean_hsv = np.mean(np_hsv, axis=(0, 1))
-        std_hsv = np.std(np_hsv, axis=(0, 1))
-        
-        # 16-bin Hue histogram (vital for currency distinction)
-        hist_h, _ = np.histogram(np_hsv[:, :, 0], bins=16, range=(0, 1))
-        hist_h = hist_h / float(128 * 64)
-        
-        # 8-bin Saturation & Value histograms
-        hist_s, _ = np.histogram(np_hsv[:, :, 1], bins=8, range=(0, 1))
-        hist_s = hist_s / float(128 * 64)
-        hist_v, _ = np.histogram(np_hsv[:, :, 2], bins=8, range=(0, 1))
-        hist_v = hist_v / float(128 * 64)
-        
-        gray = img_resized.convert('L')
-        edges = gray.filter(ImageFilter.FIND_EDGES)
-        np_edges = np.array(edges, dtype=np.float32) / 255.0
-        edge_mean = np.mean(np_edges)
-        edge_std = np.std(np_edges)
-        
-        w_third = 128 // 3
-        left_zone = np_img[:, :w_third, :]
-        center_zone = np_img[:, w_third:2*w_third, :]
-        right_zone = np_img[:, 2*w_third:, :]
-        
-        spatial_features = [
-            np.mean(left_zone), np.std(left_zone),
-            np.mean(center_zone), np.std(center_zone),
-            np.mean(right_zone), np.std(right_zone)
-        ]
-        
-        top_half = np_img[:32, :, :]
-        bottom_half = np_img[32:, :, :]
-        vertical_features = [
-            np.mean(top_half), np.std(top_half),
-            np.mean(bottom_half), np.std(bottom_half)
-        ]
-        
-        hist_r, _ = np.histogram(np_img[:, :, 0], bins=8, range=(0, 1))
-        hist_g, _ = np.histogram(np_img[:, :, 1], bins=8, range=(0, 1))
-        hist_b, _ = np.histogram(np_img[:, :, 2], bins=8, range=(0, 1))
-        hist_rgb = np.concatenate([hist_r, hist_g, hist_b]) / float(128 * 64)
-        
-        return np.concatenate([
-            [aspect_ratio],
-            mean_rgb, std_rgb,
-            mean_hsv, std_hsv,
-            [edge_mean, edge_std],
-            spatial_features,
-            vertical_features,
-            hist_h,
-            hist_s,
-            hist_v,
-            hist_rgb
-        ])
-    except Exception:
-        return None
+    """Extracts features matching trained ensemble."""
+    if extract_v4_features is not None:
+        return extract_v4_features(pil_img)
+    return None
 
 app = FastAPI(
     title="SentinelX Indian Counterfeit Currency Detection Model Service",
@@ -265,16 +213,19 @@ def preprocess_and_verify_note(image_bytes: bytes, claimed_denom: int) -> tuple[
     if Image is not None and CLF_MODEL is not None:
         try:
             with Image.open(io.BytesIO(image_bytes)) as pil_img:
-                feat = extract_pil_features(pil_img)
-                if feat is not None:
-                    probs = CLF_MODEL.predict_proba(feat.reshape(1, -1))[0]
-                    top_idx = int(np.argmax(probs))
-                    predicted_denom = DENOM_CLASSES[top_idx]
-                    pred_confidence = float(probs[top_idx])
-                    
-                    # If high-confidence prediction (>0.60) and valid digit, align effective_denom
-                    if pred_confidence > 0.60 and predicted_denom.isdigit():
+                if hasattr(CLF_MODEL, "predict_image"):
+                    predicted_denom, pred_confidence, _ = CLF_MODEL.predict_image(pil_img)
+                    if pred_confidence > 0.40 and predicted_denom.isdigit():
                         effective_denom = int(predicted_denom)
+                else:
+                    feat = extract_pil_features(pil_img)
+                    if feat is not None:
+                        probs = CLF_MODEL.predict_proba(feat.reshape(1, -1))[0]
+                        top_idx = int(np.argmax(probs))
+                        predicted_denom = DENOM_CLASSES[top_idx]
+                        pred_confidence = float(probs[top_idx])
+                        if pred_confidence > 0.50 and predicted_denom.isdigit():
+                            effective_denom = int(predicted_denom)
                     
                     # Compute anomaly Z-score against genuine baseline if available
                     if GENUINE_PROFILES and str(effective_denom) in GENUINE_PROFILES.get("profiles", {}):

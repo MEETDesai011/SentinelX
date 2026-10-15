@@ -23,3 +23,4 @@ __pycache__/
 *.pyd
 .pytest_cache/
 services/counterfeit-detection/Data/
+services/counterfeit-detection/models/cache*/
