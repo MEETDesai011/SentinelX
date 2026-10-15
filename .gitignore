@@ -15,3 +15,11 @@ dist/
 */*/dist/
 .env
 .DS_Store
+__pycache__/
+*/__pycache__/
+*/*/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+services/counterfeit-detection/Data/
