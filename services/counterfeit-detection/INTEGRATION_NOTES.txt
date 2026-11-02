@@ -1,7 +1,0 @@
-SentinelX integration reminder
-
-The zip is a replacement for the currency microservice, not a replacement for the entire SentinelX monorepo.
-Find the old service in your GitHub repository by searching for the file that defines POST /currency/detect.
-Copy this package's main.py, model_engine.py, requirements.txt, Dockerfile, models/ and train_model.py into that service directory.
-Keep the existing service directory name and root docker-compose service mapping. Confirm the docker build context still points at this directory.
-The frontend must treat classification=UNVERIFIED / authenticity_status=NOT_CHECKED as a neutral result. Never map is_counterfeit=null to false/genuine.
