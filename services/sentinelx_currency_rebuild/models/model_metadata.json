@@ -1,0 +1,146 @@
+{
+  "model_name": "SentinelX-INR-Denomination-v1",
+  "task": "six-class denomination recognition only",
+  "authenticity_detection_supported": false,
+  "trained_images": 304,
+  "class_counts": {
+    "10": 49,
+    "20": 51,
+    "50": 51,
+    "100": 51,
+    "200": 51,
+    "500": 51
+  },
+  "holdout": {
+    "test_size": 0.25,
+    "random_state": 42,
+    "samples": 76,
+    "selected_model": "random_forest",
+    "accuracy": 0.7763157894736842,
+    "macro_f1": 0.7741557148546395,
+    "classification_report": {
+      "10": {
+        "precision": 0.6923076923076923,
+        "recall": 0.75,
+        "f1-score": 0.72,
+        "support": 12.0
+      },
+      "20": {
+        "precision": 0.875,
+        "recall": 0.5833333333333334,
+        "f1-score": 0.7,
+        "support": 12.0
+      },
+      "50": {
+        "precision": 0.7142857142857143,
+        "recall": 0.7692307692307693,
+        "f1-score": 0.7407407407407407,
+        "support": 13.0
+      },
+      "100": {
+        "precision": 0.8181818181818182,
+        "recall": 0.6923076923076923,
+        "f1-score": 0.75,
+        "support": 13.0
+      },
+      "200": {
+        "precision": 0.6666666666666666,
+        "recall": 0.9230769230769231,
+        "f1-score": 0.7741935483870968,
+        "support": 13.0
+      },
+      "500": {
+        "precision": 1.0,
+        "recall": 0.9230769230769231,
+        "f1-score": 0.96,
+        "support": 13.0
+      },
+      "accuracy": 0.7763157894736842,
+      "macro avg": {
+        "precision": 0.7944069819069819,
+        "recall": 0.7735042735042735,
+        "f1-score": 0.7741557148546395,
+        "support": 76.0
+      },
+      "weighted avg": {
+        "precision": 0.7946899591636433,
+        "recall": 0.7763157894736842,
+        "f1-score": 0.775844023140288,
+        "support": 76.0
+      }
+    },
+    "confusion_matrix_labels": [
+      "10",
+      "20",
+      "50",
+      "100",
+      "200",
+      "500"
+    ],
+    "confusion_matrix": [
+      [
+        9,
+        1,
+        1,
+        0,
+        1,
+        0
+      ],
+      [
+        0,
+        7,
+        1,
+        0,
+        4,
+        0
+      ],
+      [
+        2,
+        0,
+        10,
+        1,
+        0,
+        0
+      ],
+      [
+        2,
+        0,
+        2,
+        9,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        1,
+        12,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        1,
+        12
+      ]
+    ]
+  },
+  "candidate_model_metrics": {
+    "svm_rbf": {
+      "accuracy": 0.6710526315789473,
+      "macro_f1": 0.6775104418782579
+    },
+    "extra_trees": {
+      "accuracy": 0.7368421052631579,
+      "macro_f1": 0.7307609184611473
+    },
+    "random_forest": {
+      "accuracy": 0.7763157894736842,
+      "macro_f1": 0.7741557148546395
+    }
+  },
+  "warning": "The dataset contains only denomination folders. It has no non-banknote, genuine/counterfeit, or specimen labels. This model must not claim banknote presence or authenticity."
+}
