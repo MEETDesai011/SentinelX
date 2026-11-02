@@ -21,6 +21,28 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# Environment and secrets
+.env
+.env.*
+
+# Logs
+*.log
+
+# Datasets and training caches
+dataset/
+datasets/
+**/models/cache/
+**/models/cache_v*/
 .pytest_cache/
 services/counterfeit-detection/Data/
 services/counterfeit-detection/models/cache*/
+# Old currency detector training data
+services/counterfeit-detection1/Data/
+services/counterfeit-detection1/models/cache/
